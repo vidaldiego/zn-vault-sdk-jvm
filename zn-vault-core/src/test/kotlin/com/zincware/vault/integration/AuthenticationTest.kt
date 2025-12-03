@@ -247,6 +247,70 @@ class AuthenticationTest : BaseIntegrationTest() {
         println("✓ Deleted API key: ${keyResponse.apiKey.id}")
     }
 
+    @Test
+    @Order(35)
+    @DisplayName("Get current API key info when authenticated via API key")
+    fun testGetCurrentApiKey() {
+        // First create an API key
+        client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
+
+        val keyResponse = client.auth.createApiKey(
+            name = "self-test-key-${testId}",
+            expiresIn = "1d"
+        )
+
+        // Create new client with API key
+        val apiKeyClient = ZnVaultClient.builder()
+            .baseUrl(TestConfig.BASE_URL)
+            .apiKey(keyResponse.key)
+            .insecureTls()
+            .build()
+
+        // Get current API key info
+        val currentKey = apiKeyClient.auth.getCurrentApiKey()
+
+        assertNotNull(currentKey)
+        assertEquals(keyResponse.apiKey.name, currentKey.name)
+        assertEquals(keyResponse.apiKey.prefix, currentKey.prefix)
+
+        println("✓ Got current API key info: ${currentKey.name} (${currentKey.prefix}...)")
+
+        // Cleanup
+        client.auth.deleteApiKey(keyResponse.apiKey.id)
+    }
+
+    @Test
+    @Order(36)
+    @DisplayName("Self-rotate current API key")
+    fun testSelfRotateApiKey() {
+        // First create an API key
+        client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
+
+        val originalKey = client.auth.createApiKey(
+            name = "self-rotate-test-key-${testId}",
+            expiresIn = "1d"
+        )
+
+        // Create new client with API key
+        val apiKeyClient = ZnVaultClient.builder()
+            .baseUrl(TestConfig.BASE_URL)
+            .apiKey(originalKey.key)
+            .insecureTls()
+            .build()
+
+        // Self-rotate the key
+        val rotatedKey = apiKeyClient.auth.rotateCurrentApiKey()
+
+        assertNotNull(rotatedKey.key)
+        assertNotEquals(originalKey.key, rotatedKey.key)
+        assertEquals(originalKey.apiKey.name, rotatedKey.apiKey.name)
+
+        println("✓ Self-rotated API key: ${originalKey.apiKey.prefix}... -> ${rotatedKey.apiKey.prefix}...")
+
+        // Cleanup - delete the new key using superadmin
+        client.auth.deleteApiKey(rotatedKey.apiKey.id)
+    }
+
     // ==================== 2FA Status Tests ====================
 
     @Test

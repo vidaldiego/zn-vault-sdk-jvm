@@ -7,7 +7,7 @@ plugins {
 
 allprojects {
     group = "io.github.vidaldiego"
-    version = "1.0.1"
+    version = "1.1.0"
 
     repositories {
         mavenCentral()
