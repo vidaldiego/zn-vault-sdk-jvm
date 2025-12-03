@@ -39,9 +39,10 @@ data class RefreshTokenRequest(
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class RefreshTokenResponse(
-    @JsonProperty("access_token") val accessToken: String,
-    @JsonProperty("refresh_token") val refreshToken: String,
-    @JsonProperty("expires_in") val expiresIn: Long
+    val accessToken: String,
+    val refreshToken: String,
+    val expiresIn: Long,
+    val user: User? = null
 )
 
 /**
@@ -174,7 +175,7 @@ data class CurrentUser(
     val id: String,
     val username: String,
     val email: String? = null,
-    val role: UserRole,
+    val role: UserRole? = null,
     @JsonProperty("tenant_id") val tenantId: String? = null,
     @JsonProperty("totp_enabled") val totpEnabled: Boolean = false,
     val permissions: List<String> = emptyList()

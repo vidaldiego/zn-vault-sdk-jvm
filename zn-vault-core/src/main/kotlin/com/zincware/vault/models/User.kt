@@ -14,13 +14,13 @@ data class User(
     val id: String,
     val username: String,
     val email: String? = null,
-    val role: UserRole,
+    val role: UserRole? = null,
     @JsonProperty("tenant_id") val tenantId: String? = null,
-    val status: UserStatus = UserStatus.ACTIVE,
+    val status: UserStatus? = null,
     @JsonProperty("totp_enabled") val totpEnabled: Boolean = false,
     val roles: List<Role> = emptyList(),
     val permissions: List<String> = emptyList(),
-    @JsonProperty("created_at") val createdAt: Instant,
+    @JsonProperty("created_at") val createdAt: Instant? = null,
     @JsonProperty("last_login") val lastLogin: Instant? = null,
     @JsonProperty("password_must_change") val passwordMustChange: Boolean = false
 )
