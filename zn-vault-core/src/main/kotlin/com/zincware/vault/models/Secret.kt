@@ -21,9 +21,7 @@ data class Secret(
     @JsonProperty("ttl_until") val ttlUntil: Instant? = null,
     @JsonProperty("content_type") val contentType: String? = null,
     @JsonProperty("created_by") val createdBy: String? = null,
-    val checksum: String? = null,
-    val env: String? = null,
-    val service: String? = null
+    val checksum: String? = null
 )
 
 /**
@@ -49,13 +47,10 @@ data class SecretData(
  */
 data class CreateSecretRequest(
     val alias: String,
-    val tenant: String,
     val type: SecretType,
     val data: Map<String, Any>,
     val tags: List<String> = emptyList(),
-    @JsonProperty("ttl_until") val ttlUntil: Instant? = null,
-    val env: String? = null,
-    val service: String? = null
+    @JsonProperty("ttl_until") val ttlUntil: Instant? = null
 )
 
 /**
@@ -76,9 +71,6 @@ data class UpdateSecretMetadataRequest(
  * Filter for listing secrets.
  */
 data class SecretFilter(
-    val tenant: String? = null,
-    val env: String? = null,
-    val service: String? = null,
     val type: SecretType? = null,
     val tags: List<String>? = null,
     val limit: Int = 50,

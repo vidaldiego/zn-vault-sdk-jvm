@@ -51,18 +51,17 @@ class SecretClientAsync @JvmOverloads constructor(
 
     fun createAsync(
         alias: String,
-        tenant: String,
         type: SecretType,
         data: Map<String, Any>,
         tags: List<String> = emptyList()
     ): CompletableFuture<Secret> =
-        CompletableFuture.supplyAsync({ sync.create(alias, tenant, type, data, tags) }, executor)
+        CompletableFuture.supplyAsync({ sync.create(alias, type, data, tags) }, executor)
 
     fun getAsync(id: String): CompletableFuture<Secret> =
         CompletableFuture.supplyAsync({ sync.get(id) }, executor)
 
-    fun getByAliasAsync(tenant: String, alias: String): CompletableFuture<Secret> =
-        CompletableFuture.supplyAsync({ sync.getByAlias(tenant, alias) }, executor)
+    fun getByAliasAsync(alias: String): CompletableFuture<Secret> =
+        CompletableFuture.supplyAsync({ sync.getByAlias(alias) }, executor)
 
     fun decryptAsync(id: String): CompletableFuture<SecretData> =
         CompletableFuture.supplyAsync({ sync.decrypt(id) }, executor)
@@ -90,23 +89,21 @@ class SecretClientAsync @JvmOverloads constructor(
 
     fun uploadFileAsync(
         alias: String,
-        tenant: String,
         file: File,
         tags: List<String> = emptyList()
     ): CompletableFuture<Secret> =
-        CompletableFuture.supplyAsync({ sync.uploadFile(alias, tenant, file, tags) }, executor)
+        CompletableFuture.supplyAsync({ sync.uploadFile(alias, file, tags) }, executor)
 
     fun downloadFileAsync(id: String): CompletableFuture<ByteArray> =
         CompletableFuture.supplyAsync({ sync.downloadFile(id) }, executor)
 
     fun createCredentialAsync(
         alias: String,
-        tenant: String,
         username: String,
         password: String,
         tags: List<String> = emptyList()
     ): CompletableFuture<Secret> =
-        CompletableFuture.supplyAsync({ sync.createCredential(alias, tenant, username, password, tags) }, executor)
+        CompletableFuture.supplyAsync({ sync.createCredential(alias, username, password, tags) }, executor)
 
     fun getCredentialsAsync(id: String): CompletableFuture<Pair<String, String>> =
         CompletableFuture.supplyAsync({ sync.getCredentials(id) }, executor)

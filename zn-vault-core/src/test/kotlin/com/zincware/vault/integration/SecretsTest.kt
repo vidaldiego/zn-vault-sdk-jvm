@@ -51,7 +51,6 @@ class SecretsTest : BaseIntegrationTest() {
         val secret = client.secrets.create(
             CreateSecretRequest(
                 alias = alias,
-                tenant = TestConfig.DEFAULT_TENANT,
                 type = SecretType.CREDENTIAL,
                 data = mapOf(
                     "username" to "testuser",
@@ -83,7 +82,6 @@ class SecretsTest : BaseIntegrationTest() {
 
         val secret = client.secrets.create(
             alias = alias,
-            tenant = TestConfig.DEFAULT_TENANT,
             type = SecretType.OPAQUE,
             data = mapOf(
                 "api_key" to "sk_live_abc123",
@@ -108,7 +106,6 @@ class SecretsTest : BaseIntegrationTest() {
 
         val secret = client.secrets.create(
             alias = alias,
-            tenant = TestConfig.DEFAULT_TENANT,
             type = SecretType.SETTING,
             data = mapOf(
                 "db_host" to "localhost",
@@ -131,7 +128,6 @@ class SecretsTest : BaseIntegrationTest() {
 
         val secret = client.secrets.createCredential(
             alias = alias,
-            tenant = TestConfig.DEFAULT_TENANT,
             username = "dbuser",
             password = "dbpass456",
             tags = listOf("database")
@@ -152,7 +148,6 @@ class SecretsTest : BaseIntegrationTest() {
         // Create a secret first
         val created = client.secrets.create(
             alias = uniqueAlias("get-test"),
-            tenant = TestConfig.DEFAULT_TENANT,
             type = SecretType.OPAQUE,
             data = mapOf("key" to "value")
         )
@@ -174,7 +169,6 @@ class SecretsTest : BaseIntegrationTest() {
         // Create a secret
         val created = client.secrets.create(
             alias = uniqueAlias("decrypt-test"),
-            tenant = TestConfig.DEFAULT_TENANT,
             type = SecretType.CREDENTIAL,
             data = mapOf(
                 "username" to "decryptuser",
@@ -200,7 +194,6 @@ class SecretsTest : BaseIntegrationTest() {
         // Create a credential
         val created = client.secrets.createCredential(
             alias = uniqueAlias("getcred-test"),
-            tenant = TestConfig.DEFAULT_TENANT,
             username = "helperuser",
             password = "helperpass"
         )
@@ -235,7 +228,6 @@ class SecretsTest : BaseIntegrationTest() {
         // Create a secret
         val created = client.secrets.create(
             alias = uniqueAlias("update-test"),
-            tenant = TestConfig.DEFAULT_TENANT,
             type = SecretType.OPAQUE,
             data = mapOf("key" to "original_value")
         )
@@ -265,7 +257,6 @@ class SecretsTest : BaseIntegrationTest() {
         // Create a secret
         val created = client.secrets.create(
             alias = uniqueAlias("meta-test"),
-            tenant = TestConfig.DEFAULT_TENANT,
             type = SecretType.OPAQUE,
             data = mapOf("key" to "value"),
             tags = listOf("original")
@@ -293,7 +284,6 @@ class SecretsTest : BaseIntegrationTest() {
         // Create a secret
         val created = client.secrets.create(
             alias = uniqueAlias("rotate-test"),
-            tenant = TestConfig.DEFAULT_TENANT,
             type = SecretType.CREDENTIAL,
             data = mapOf(
                 "username" to "user",
@@ -329,7 +319,6 @@ class SecretsTest : BaseIntegrationTest() {
         // Create and update a secret to have multiple versions
         val created = client.secrets.create(
             alias = uniqueAlias("history-test"),
-            tenant = TestConfig.DEFAULT_TENANT,
             type = SecretType.OPAQUE,
             data = mapOf("version" to "1")
         )
@@ -356,7 +345,6 @@ class SecretsTest : BaseIntegrationTest() {
         // Create a secret
         val created = client.secrets.create(
             alias = uniqueAlias("version-test"),
-            tenant = TestConfig.DEFAULT_TENANT,
             type = SecretType.OPAQUE,
             data = mapOf("value" to "version1")
         )
@@ -386,7 +374,6 @@ class SecretsTest : BaseIntegrationTest() {
         repeat(3) { i ->
             val secret = client.secrets.create(
                 alias = uniqueAlias("list-test-$i"),
-                tenant = TestConfig.DEFAULT_TENANT,
                 type = SecretType.OPAQUE,
                 data = mapOf("index" to i)
             )
@@ -396,7 +383,6 @@ class SecretsTest : BaseIntegrationTest() {
         // List with filter
         val secrets = client.secrets.list(
             SecretFilter(
-                tenant = TestConfig.DEFAULT_TENANT,
                 limit = 10
             )
         )
@@ -407,16 +393,12 @@ class SecretsTest : BaseIntegrationTest() {
 
     @Test
     @Order(51)
-    @DisplayName("List secrets by tenant")
-    fun testListSecretsByTenant() {
-        val secrets = client.secrets.listByTenant(TestConfig.DEFAULT_TENANT)
+    @DisplayName("List all secrets")
+    fun testListAllSecrets() {
+        val secrets = client.secrets.listAll()
 
         assertTrue(secrets.isNotEmpty())
-        secrets.forEach { secret ->
-            assertEquals(TestConfig.DEFAULT_TENANT, secret.tenant)
-        }
-
-        println("✓ Listed ${secrets.size} secrets for tenant ${TestConfig.DEFAULT_TENANT}")
+        println("✓ Listed ${secrets.size} secrets")
     }
 
     // ==================== Delete Tests ====================
@@ -428,7 +410,6 @@ class SecretsTest : BaseIntegrationTest() {
         // Create a secret
         val created = client.secrets.create(
             alias = uniqueAlias("delete-test"),
-            tenant = TestConfig.DEFAULT_TENANT,
             type = SecretType.OPAQUE,
             data = mapOf("key" to "value")
         )
@@ -461,7 +442,6 @@ class SecretsTest : BaseIntegrationTest() {
 
         val secret = client.secrets.uploadFile(
             alias = alias,
-            tenant = TestConfig.DEFAULT_TENANT,
             file = tempFile,
             tags = listOf("file", "test")
         )
@@ -483,7 +463,6 @@ class SecretsTest : BaseIntegrationTest() {
         // Upload content
         val secret = client.secrets.uploadFile(
             alias = uniqueAlias("file-download"),
-            tenant = TestConfig.DEFAULT_TENANT,
             filename = "test.txt",
             content = content.toByteArray(),
             contentType = "text/plain"
@@ -508,7 +487,6 @@ class SecretsTest : BaseIntegrationTest() {
         // Upload
         val secret = client.secrets.uploadFile(
             alias = uniqueAlias("file-to-disk"),
-            tenant = TestConfig.DEFAULT_TENANT,
             filename = "save-test.txt",
             content = content.toByteArray()
         )

@@ -28,20 +28,19 @@ class AsyncSecretClient(private val sync: SecretClient) {
 
     suspend fun create(
         alias: String,
-        tenant: String,
         type: SecretType,
         data: Map<String, Any>,
         tags: List<String> = emptyList()
     ): Secret = withContext(Dispatchers.IO) {
-        sync.create(alias, tenant, type, data, tags)
+        sync.create(alias, type, data, tags)
     }
 
     suspend fun get(id: String): Secret = withContext(Dispatchers.IO) {
         sync.get(id)
     }
 
-    suspend fun getByAlias(tenant: String, alias: String): Secret = withContext(Dispatchers.IO) {
-        sync.getByAlias(tenant, alias)
+    suspend fun getByAlias(alias: String): Secret = withContext(Dispatchers.IO) {
+        sync.getByAlias(alias)
     }
 
     suspend fun decrypt(id: String): SecretData = withContext(Dispatchers.IO) {
@@ -90,22 +89,20 @@ class AsyncSecretClient(private val sync: SecretClient) {
 
     suspend fun uploadFile(
         alias: String,
-        tenant: String,
         file: File,
         tags: List<String> = emptyList()
     ): Secret = withContext(Dispatchers.IO) {
-        sync.uploadFile(alias, tenant, file, tags)
+        sync.uploadFile(alias, file, tags)
     }
 
     suspend fun uploadFile(
         alias: String,
-        tenant: String,
         filename: String,
         content: ByteArray,
         contentType: String = "application/octet-stream",
         tags: List<String> = emptyList()
     ): Secret = withContext(Dispatchers.IO) {
-        sync.uploadFile(alias, tenant, filename, content, contentType, tags)
+        sync.uploadFile(alias, filename, content, contentType, tags)
     }
 
     suspend fun downloadFile(id: String): ByteArray = withContext(Dispatchers.IO) {
@@ -118,12 +115,11 @@ class AsyncSecretClient(private val sync: SecretClient) {
 
     suspend fun createCredential(
         alias: String,
-        tenant: String,
         username: String,
         password: String,
         tags: List<String> = emptyList()
     ): Secret = withContext(Dispatchers.IO) {
-        sync.createCredential(alias, tenant, username, password, tags)
+        sync.createCredential(alias, username, password, tags)
     }
 
     suspend fun getCredentials(id: String): Pair<String, String> = withContext(Dispatchers.IO) {

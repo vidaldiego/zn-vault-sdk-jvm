@@ -31,7 +31,6 @@ class SecretClient internal constructor(
      * Create a new secret with simplified parameters.
      *
      * @param alias Path-based alias (e.g., "api/production/db-creds")
-     * @param tenant Tenant ID
      * @param type Secret type
      * @param data Secret data
      * @param tags Optional tags
@@ -39,12 +38,11 @@ class SecretClient internal constructor(
      */
     fun create(
         alias: String,
-        tenant: String,
         type: SecretType,
         data: Map<String, Any>,
         tags: List<String> = emptyList()
     ): Secret {
-        return create(CreateSecretRequest(alias, tenant, type, data, tags))
+        return create(CreateSecretRequest(alias, type, data, tags))
     }
 
     /**
@@ -60,13 +58,12 @@ class SecretClient internal constructor(
     /**
      * Get secret by alias path.
      *
-     * @param tenant Tenant ID
      * @param alias Secret alias path
      * @return Secret metadata
      */
-    fun getByAlias(tenant: String, alias: String): Secret {
+    fun getByAlias(alias: String): Secret {
         val encodedAlias = URLEncoder.encode(alias, StandardCharsets.UTF_8)
-        return httpClient.get("/v1/secrets/$tenant/$encodedAlias", Secret::class.java)
+        return httpClient.get("/v1/secrets/alias/$encodedAlias", Secret::class.java)
     }
 
     /**
@@ -137,13 +134,12 @@ class SecretClient internal constructor(
     }
 
     /**
-     * List all secrets for a tenant.
+     * List all secrets.
      *
-     * @param tenant Tenant ID
      * @return List of secrets
      */
-    fun listByTenant(tenant: String): List<Secret> {
-        return list(SecretFilter(tenant = tenant))
+    fun listAll(): List<Secret> {
+        return list(SecretFilter())
     }
 
     /**
@@ -174,14 +170,12 @@ class SecretClient internal constructor(
      * Upload a file as a secret.
      *
      * @param alias Secret alias
-     * @param tenant Tenant ID
      * @param file File to upload
      * @param tags Optional tags
      * @return Created secret
      */
     fun uploadFile(
         alias: String,
-        tenant: String,
         file: File,
         tags: List<String> = emptyList()
     ): Secret {
@@ -191,7 +185,6 @@ class SecretClient internal constructor(
         return create(
             CreateSecretRequest(
                 alias = alias,
-                tenant = tenant,
                 type = SecretType.OPAQUE,
                 data = mapOf(
                     "filename" to file.name,
@@ -207,7 +200,6 @@ class SecretClient internal constructor(
      * Upload a file from bytes.
      *
      * @param alias Secret alias
-     * @param tenant Tenant ID
      * @param filename Original filename
      * @param content File content as bytes
      * @param contentType MIME type
@@ -216,7 +208,6 @@ class SecretClient internal constructor(
      */
     fun uploadFile(
         alias: String,
-        tenant: String,
         filename: String,
         content: ByteArray,
         contentType: String = "application/octet-stream",
@@ -227,7 +218,6 @@ class SecretClient internal constructor(
         return create(
             CreateSecretRequest(
                 alias = alias,
-                tenant = tenant,
                 type = SecretType.OPAQUE,
                 data = mapOf(
                     "filename" to filename,
@@ -269,7 +259,6 @@ class SecretClient internal constructor(
      * Create a credential secret.
      *
      * @param alias Secret alias
-     * @param tenant Tenant ID
      * @param username Username
      * @param password Password
      * @param tags Optional tags
@@ -277,7 +266,6 @@ class SecretClient internal constructor(
      */
     fun createCredential(
         alias: String,
-        tenant: String,
         username: String,
         password: String,
         tags: List<String> = emptyList()
@@ -285,7 +273,6 @@ class SecretClient internal constructor(
         return create(
             CreateSecretRequest(
                 alias = alias,
-                tenant = tenant,
                 type = SecretType.CREDENTIAL,
                 data = mapOf(
                     "username" to username,
@@ -314,9 +301,6 @@ class SecretClient internal constructor(
     private fun buildQueryParams(filter: SecretFilter): String {
         val params = mutableListOf<String>()
 
-        filter.tenant?.let { params.add("tenant=${encode(it)}") }
-        filter.env?.let { params.add("env=${encode(it)}") }
-        filter.service?.let { params.add("service=${encode(it)}") }
         filter.type?.let { params.add("type=${it.name.lowercase()}") }
         filter.tags?.forEach { params.add("tags=${encode(it)}") }
         params.add("limit=${filter.limit}")
