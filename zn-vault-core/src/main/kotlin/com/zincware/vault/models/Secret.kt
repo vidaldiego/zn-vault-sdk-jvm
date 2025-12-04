@@ -83,9 +83,12 @@ data class SecretFilter(
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class SecretVersion(
-    val id: String,
-    @JsonProperty("secret_id") val secretId: String? = null,
+    val id: Int,
+    val tenant: String? = null,
+    val alias: String? = null,
+    val type: String? = null,
     val version: Int,
+    val tags: List<String>? = null,
     @JsonProperty("created_at") val createdAt: Instant? = null,
     @JsonProperty("created_by") val createdBy: String? = null,
     val checksum: String? = null
