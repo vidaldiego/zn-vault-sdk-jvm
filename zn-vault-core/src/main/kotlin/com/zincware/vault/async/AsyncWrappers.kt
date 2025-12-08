@@ -12,6 +12,7 @@ import com.zincware.vault.kms.KmsClient
 import com.zincware.vault.models.*
 import com.zincware.vault.secrets.SecretClient
 import java.io.File
+import java.time.Instant
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -53,9 +54,14 @@ class SecretClientAsync @JvmOverloads constructor(
         alias: String,
         type: SecretType,
         data: Map<String, Any>,
-        tags: List<String> = emptyList()
+        subType: SecretSubType? = null,
+        tags: List<String> = emptyList(),
+        fileName: String? = null,
+        expiresAt: Instant? = null,
+        ttlUntil: Instant? = null,
+        contentType: String? = null
     ): CompletableFuture<Secret> =
-        CompletableFuture.supplyAsync({ sync.create(alias, type, data, tags) }, executor)
+        CompletableFuture.supplyAsync({ sync.create(alias, type, data, subType, tags, fileName, expiresAt, ttlUntil, contentType) }, executor)
 
     fun getAsync(id: String): CompletableFuture<Secret> =
         CompletableFuture.supplyAsync({ sync.get(id) }, executor)
@@ -90,13 +96,27 @@ class SecretClientAsync @JvmOverloads constructor(
     fun uploadFileAsync(
         alias: String,
         file: File,
+        subType: SecretSubType? = null,
+        expiresAt: Instant? = null,
         tags: List<String> = emptyList()
     ): CompletableFuture<Secret> =
-        CompletableFuture.supplyAsync({ sync.uploadFile(alias, file, tags) }, executor)
+        CompletableFuture.supplyAsync({ sync.uploadFile(alias, file, subType, expiresAt, tags) }, executor)
+
+    fun uploadFileAsync(
+        alias: String,
+        filename: String,
+        content: ByteArray,
+        contentType: String = "application/octet-stream",
+        subType: SecretSubType? = null,
+        expiresAt: Instant? = null,
+        tags: List<String> = emptyList()
+    ): CompletableFuture<Secret> =
+        CompletableFuture.supplyAsync({ sync.uploadFile(alias, filename, content, contentType, subType, expiresAt, tags) }, executor)
 
     fun downloadFileAsync(id: String): CompletableFuture<ByteArray> =
         CompletableFuture.supplyAsync({ sync.downloadFile(id) }, executor)
 
+    @Deprecated("Use createPasswordAsync instead", ReplaceWith("createPasswordAsync(alias, username, password, tags = tags)"))
     fun createCredentialAsync(
         alias: String,
         username: String,
@@ -107,6 +127,159 @@ class SecretClientAsync @JvmOverloads constructor(
 
     fun getCredentialsAsync(id: String): CompletableFuture<Pair<String, String>> =
         CompletableFuture.supplyAsync({ sync.getCredentials(id) }, executor)
+
+    // Convenience async methods for typed secret creation
+
+    fun createPasswordAsync(
+        alias: String,
+        username: String,
+        password: String,
+        url: String? = null,
+        notes: String? = null,
+        tags: List<String> = emptyList(),
+        ttlUntil: Instant? = null
+    ): CompletableFuture<Secret> =
+        CompletableFuture.supplyAsync({ sync.createPassword(alias, username, password, url, notes, tags, ttlUntil) }, executor)
+
+    fun createApiKeyAsync(
+        alias: String,
+        key: String,
+        secret: String? = null,
+        endpoint: String? = null,
+        notes: String? = null,
+        tags: List<String> = emptyList(),
+        ttlUntil: Instant? = null
+    ): CompletableFuture<Secret> =
+        CompletableFuture.supplyAsync({ sync.createApiKey(alias, key, secret, endpoint, notes, tags, ttlUntil) }, executor)
+
+    fun createCertificateAsync(
+        alias: String,
+        content: ByteArray,
+        fileName: String? = null,
+        chain: List<String>? = null,
+        expiresAt: Instant? = null,
+        tags: List<String> = emptyList()
+    ): CompletableFuture<Secret> =
+        CompletableFuture.supplyAsync({ sync.createCertificate(alias, content, fileName, chain, expiresAt, tags) }, executor)
+
+    fun createPrivateKeyAsync(
+        alias: String,
+        privateKey: ByteArray,
+        fileName: String? = null,
+        passphrase: String? = null,
+        tags: List<String> = emptyList()
+    ): CompletableFuture<Secret> =
+        CompletableFuture.supplyAsync({ sync.createPrivateKey(alias, privateKey, fileName, passphrase, tags) }, executor)
+
+    fun createKeypairAsync(
+        alias: String,
+        privateKey: ByteArray,
+        publicKey: ByteArray,
+        fileName: String? = null,
+        passphrase: String? = null,
+        tags: List<String> = emptyList()
+    ): CompletableFuture<Secret> =
+        CompletableFuture.supplyAsync({ sync.createKeypair(alias, privateKey, publicKey, fileName, passphrase, tags) }, executor)
+
+    fun createTokenAsync(
+        alias: String,
+        token: String,
+        tokenType: String? = null,
+        refreshToken: String? = null,
+        expiresAt: Instant? = null,
+        tags: List<String> = emptyList()
+    ): CompletableFuture<Secret> =
+        CompletableFuture.supplyAsync({ sync.createToken(alias, token, tokenType, refreshToken, expiresAt, tags) }, executor)
+
+    fun createJsonSettingAsync(
+        alias: String,
+        content: Map<String, Any>,
+        tags: List<String> = emptyList()
+    ): CompletableFuture<Secret> =
+        CompletableFuture.supplyAsync({ sync.createJsonSetting(alias, content, tags) }, executor)
+
+    fun createYamlSettingAsync(
+        alias: String,
+        content: String,
+        tags: List<String> = emptyList()
+    ): CompletableFuture<Secret> =
+        CompletableFuture.supplyAsync({ sync.createYamlSetting(alias, content, tags) }, executor)
+
+    fun createEnvSettingAsync(
+        alias: String,
+        content: Map<String, String>,
+        tags: List<String> = emptyList()
+    ): CompletableFuture<Secret> =
+        CompletableFuture.supplyAsync({ sync.createEnvSetting(alias, content, tags) }, executor)
+
+    // Convenience async methods for filtering
+
+    fun listBySubTypeAsync(
+        subType: SecretSubType,
+        page: Int = 1,
+        pageSize: Int = 100
+    ): CompletableFuture<List<Secret>> =
+        CompletableFuture.supplyAsync({ sync.listBySubType(subType, page, pageSize) }, executor)
+
+    fun listByTypeAsync(
+        type: SecretType,
+        page: Int = 1,
+        pageSize: Int = 100
+    ): CompletableFuture<List<Secret>> =
+        CompletableFuture.supplyAsync({ sync.listByType(type, page, pageSize) }, executor)
+
+    fun listExpiringCertificatesAsync(
+        beforeDate: Instant,
+        page: Int = 1,
+        pageSize: Int = 100
+    ): CompletableFuture<List<Secret>> =
+        CompletableFuture.supplyAsync({ sync.listExpiringCertificates(beforeDate, page, pageSize) }, executor)
+
+    fun listExpiringAsync(
+        beforeDate: Instant,
+        page: Int = 1,
+        pageSize: Int = 100
+    ): CompletableFuture<List<Secret>> =
+        CompletableFuture.supplyAsync({ sync.listExpiring(beforeDate, page, pageSize) }, executor)
+
+    fun listByPathAsync(
+        aliasPrefix: String,
+        page: Int = 1,
+        pageSize: Int = 100
+    ): CompletableFuture<List<Secret>> =
+        CompletableFuture.supplyAsync({ sync.listByPath(aliasPrefix, page, pageSize) }, executor)
+
+    fun downloadFileWithMetadataAsync(id: String): CompletableFuture<Triple<ByteArray, String, String>> =
+        CompletableFuture.supplyAsync({ sync.downloadFileWithMetadata(id) }, executor)
+
+    // Keypair generation and publishing
+
+    fun generateKeypairAsync(request: GenerateKeypairRequest): CompletableFuture<GeneratedKeypair> =
+        CompletableFuture.supplyAsync({ sync.generateKeypair(request) }, executor)
+
+    fun generateKeypairAsync(
+        algorithm: KeypairAlgorithm,
+        alias: String,
+        tenant: String,
+        rsaBits: Int? = null,
+        ecdsaCurve: EcdsaCurve? = null,
+        comment: String? = null,
+        publishPublicKey: Boolean? = null,
+        tags: List<String> = emptyList()
+    ): CompletableFuture<GeneratedKeypair> =
+        CompletableFuture.supplyAsync({ sync.generateKeypair(algorithm, alias, tenant, rsaBits, ecdsaCurve, comment, publishPublicKey, tags) }, executor)
+
+    fun publishAsync(secretId: String): CompletableFuture<PublishResult> =
+        CompletableFuture.supplyAsync({ sync.publish(secretId) }, executor)
+
+    fun unpublishAsync(secretId: String): CompletableFuture<Void> =
+        CompletableFuture.runAsync({ sync.unpublish(secretId) }, executor)
+
+    fun getPublicKeyAsync(tenant: String, alias: String): CompletableFuture<PublicKeyInfo> =
+        CompletableFuture.supplyAsync({ sync.getPublicKey(tenant, alias) }, executor)
+
+    fun listPublicKeysAsync(tenant: String): CompletableFuture<List<PublicKeyInfo>> =
+        CompletableFuture.supplyAsync({ sync.listPublicKeys(tenant) }, executor)
 }
 
 /**

@@ -11,17 +11,19 @@ object TestConfig {
     const val BASE_URL = "https://localhost:8443"
 
     // Test users
+    // Note: Username must be in format "tenant/username" for non-superadmin users.
+    // Superadmin can omit tenant prefix. Email can also be used as username.
     object Users {
-        // Superadmin - full access
+        // Superadmin - full access (no tenant prefix required)
         const val SUPERADMIN_USERNAME = "admin"
         const val SUPERADMIN_PASSWORD = "Admin123456#"
 
-        // Tenant admin - manages tenant resources
-        const val TENANT_ADMIN_USERNAME = "zincadmin"
+        // Tenant admin - manages tenant resources (requires tenant/username format)
+        const val TENANT_ADMIN_USERNAME = "zincapp/zincadmin"
         const val TENANT_ADMIN_PASSWORD = "Admin123456#"
 
-        // Regular user - limited access
-        const val REGULAR_USER_USERNAME = "zincuser"
+        // Regular user - limited access (requires tenant/username format)
+        const val REGULAR_USER_USERNAME = "zincapp/zincuser"
         const val REGULAR_USER_PASSWORD = "Admin123456#"
     }
 

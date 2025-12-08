@@ -48,7 +48,11 @@ class TokenManager(
     /**
      * Login with username and password.
      *
-     * @param username The username
+     * The username must include the tenant prefix in the format `tenant/username`
+     * (e.g., "acme/admin"). This allows multiple tenants to have users with the
+     * same username. Email addresses can also be used as username.
+     *
+     * @param username The username in format "tenant/username" or email
      * @param password The password
      * @param totpCode Optional TOTP code for 2FA
      * @return Login response with tokens
@@ -77,6 +81,23 @@ class TokenManager(
 
         logger.debug("Successfully logged in as {}", username)
         return response
+    }
+
+    /**
+     * Login with tenant and username as separate parameters.
+     *
+     * Convenience method that formats the username as "tenant/username".
+     *
+     * @param tenant Tenant identifier (e.g., "acme")
+     * @param username Username within the tenant (e.g., "admin")
+     * @param password The password
+     * @param totpCode Optional TOTP code for 2FA
+     * @return Login response with tokens
+     * @throws AuthenticationException if login fails
+     */
+    fun login(tenant: String, username: String, password: String, totpCode: String? = null): LoginResponse {
+        val fullUsername = "$tenant/$username"
+        return login(fullUsername, password, totpCode)
     }
 
     /**

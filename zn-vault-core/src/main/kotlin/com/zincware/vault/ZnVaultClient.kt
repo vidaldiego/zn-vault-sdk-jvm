@@ -76,10 +76,14 @@ class ZnVaultClient private constructor(
     /**
      * Login with username and password.
      *
+     * The username must include the tenant prefix in the format `tenant/username`
+     * (e.g., "acme/admin"). This allows multiple tenants to have users with the
+     * same username. Email addresses can also be used as username.
+     *
      * After successful login, the client will automatically use the JWT token
      * for subsequent requests and refresh it before expiry.
      *
-     * @param username Username
+     * @param username Username in format "tenant/username" or email
      * @param password Password
      * @param totpCode Optional TOTP code for 2FA
      * @return Login response with tokens
@@ -89,6 +93,24 @@ class ZnVaultClient private constructor(
             "TokenManager not available. Use builder without apiKey to enable login."
         }
         return tokenManager.login(username, password, totpCode)
+    }
+
+    /**
+     * Login with tenant and username as separate parameters.
+     *
+     * Convenience method that formats the username as "tenant/username".
+     *
+     * @param tenant Tenant identifier (e.g., "acme")
+     * @param username Username within the tenant (e.g., "admin")
+     * @param password Password
+     * @param totpCode Optional TOTP code for 2FA
+     * @return Login response with tokens
+     */
+    fun login(tenant: String, username: String, password: String, totpCode: String? = null): LoginResponse {
+        requireNotNull(tokenManager) {
+            "TokenManager not available. Use builder without apiKey to enable login."
+        }
+        return tokenManager.login(tenant, username, password, totpCode)
     }
 
     /**

@@ -244,6 +244,59 @@ val certBytes = client.secrets.downloadFile(secret.id)
 client.secrets.downloadFile(secret.id, File("/path/to/output.pem"))
 ```
 
+## Keypair Generation & Public Key Publishing
+
+```kotlin
+// Generate an Ed25519 keypair (SSH, signing)
+val keypair = client.secrets.generateKeypair(
+    algorithm = KeypairAlgorithm.Ed25519,
+    alias = "ssh/deploy-key",
+    tenant = "acme",
+    comment = "Deployment key for CI/CD",
+    publishPublicKey = true,  // Make public key accessible without auth
+    tags = listOf("ssh", "deployment")
+)
+
+println("Private key ID: ${keypair.privateKey.id}")
+println("Public key fingerprint: ${keypair.publicKey.fingerprint}")
+println("OpenSSH format: ${keypair.publicKey.publicKeyOpenSSH}")
+
+// Generate RSA keypair (TLS, encryption)
+val rsaKeypair = client.secrets.generateKeypair(
+    algorithm = KeypairAlgorithm.RSA,
+    alias = "tls/server-key",
+    tenant = "acme",
+    rsaBits = 4096,  // 2048 or 4096
+    tags = listOf("tls", "server")
+)
+
+// Generate ECDSA keypair (signing)
+val ecdsaKeypair = client.secrets.generateKeypair(
+    algorithm = KeypairAlgorithm.ECDSA,
+    alias = "signing/release-key",
+    tenant = "acme",
+    ecdsaCurve = EcdsaCurve.P_384,  // P_256 or P_384
+    tags = listOf("signing")
+)
+
+// Publish a public key (make it publicly accessible)
+val result = client.secrets.publish(keypair.publicKey.id)
+println("Published at: ${result.publicUrl}")
+
+// Get a published public key (NO AUTHENTICATION REQUIRED)
+val publicClient = ZnVaultClient.builder()
+    .baseUrl("https://vault.example.com:8443")
+    .build()
+
+val publicKey = publicClient.secrets.getPublicKey("acme", "ssh-deploy-key.pub")
+println("OpenSSH: ${publicKey.publicKeyOpenSSH}")
+
+// List all published public keys for a tenant (NO AUTH REQUIRED)
+val publicKeys = publicClient.secrets.listPublicKeys("acme")
+```
+
+See [KEYPAIR_EXAMPLES.md](KEYPAIR_EXAMPLES.md) for detailed examples and use cases.
+
 ## TLS Configuration
 
 ### Custom CA Certificate
@@ -333,7 +386,7 @@ val client = ZnVaultClient.builder()
 
 | Client | Description |
 |--------|-------------|
-| `secrets` | Secret CRUD, encryption/decryption, file storage |
+| `secrets` | Secret CRUD, encryption/decryption, file storage, keypair generation, public key publishing |
 | `kms` | Key Management Service (CMKs, DEKs, encryption) |
 | `auth` | Registration, API keys, 2FA management |
 | `tenants` | Multi-tenant management |

@@ -383,7 +383,7 @@ class SecretsTest : BaseIntegrationTest() {
         // List with filter
         val secrets = client.secrets.list(
             SecretFilter(
-                limit = 10
+                pageSize = 10
             )
         )
 
@@ -443,6 +443,8 @@ class SecretsTest : BaseIntegrationTest() {
         val secret = client.secrets.uploadFile(
             alias = alias,
             file = tempFile,
+            subType = null,
+            expiresAt = null,
             tags = listOf("file", "test")
         )
 
