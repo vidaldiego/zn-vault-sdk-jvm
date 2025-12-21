@@ -9,11 +9,34 @@ import java.util.UUID
 
 /**
  * Base class for integration tests.
+ *
+ * Uses client caching to avoid hitting rate limits on production servers.
+ * Clients are cached per user type (superadmin, tenant admin, regular user)
+ * and reused across tests to minimize login calls.
  */
 abstract class BaseIntegrationTest {
 
     protected lateinit var client: ZnVaultClient
     protected lateinit var testId: String
+
+    companion object {
+        // Cache authenticated clients to avoid rate limit issues
+        private val clientCache = mutableMapOf<String, ZnVaultClient>()
+        private val cacheLock = Any()
+
+        /**
+         * Get a cached client or create a new one if not cached.
+         * This dramatically reduces login calls across the test suite.
+         */
+        fun getCachedClient(key: String, creator: () -> ZnVaultClient): ZnVaultClient {
+            synchronized(cacheLock) {
+                return clientCache.getOrPut(key) {
+                    println("  (Creating new client for: $key)")
+                    creator()
+                }
+            }
+        }
+    }
 
     @BeforeEach
     fun setUp(testInfo: TestInfo) {

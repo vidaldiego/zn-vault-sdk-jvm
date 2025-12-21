@@ -47,7 +47,9 @@ class UserTest : BaseIntegrationTest() {
         createdUserIds.add(user.id)
 
         assertNotNull(user.id)
-        assertEquals(username, user.username)
+        // Server returns username with tenant prefix (e.g., "zincapp/testuser-xxx")
+        assertTrue(user.username.endsWith(username) || user.username == username,
+            "Username should end with $username, got ${user.username}")
         assertEquals("$username@example.com", user.email)
 
         println("✓ Created user: ${user.username}")
@@ -72,7 +74,9 @@ class UserTest : BaseIntegrationTest() {
         createdUserIds.add(user.id)
 
         assertNotNull(user.id)
-        assertEquals(username, user.username)
+        // Server returns username with tenant prefix (e.g., "zincapp/simpleuser-xxx")
+        assertTrue(user.username.endsWith(username) || user.username == username,
+            "Username should end with $username, got ${user.username}")
 
         println("✓ Created user via simplified method: ${user.username}")
     }
@@ -95,7 +99,9 @@ class UserTest : BaseIntegrationTest() {
         val user = client.admin.users.get(created.id)
 
         assertEquals(created.id, user.id)
-        assertEquals(username, user.username)
+        // Server returns username with tenant prefix
+        assertTrue(user.username.endsWith(username) || user.username == username,
+            "Username should end with $username, got ${user.username}")
 
         println("✓ Retrieved user: ${user.username}")
     }

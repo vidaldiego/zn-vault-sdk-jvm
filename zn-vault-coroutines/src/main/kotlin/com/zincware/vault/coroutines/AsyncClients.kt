@@ -30,9 +30,10 @@ class AsyncSecretClient(private val sync: SecretClient) {
         alias: String,
         type: SecretType,
         data: Map<String, Any>,
+        subType: SecretSubType? = null,
         tags: List<String> = emptyList()
     ): Secret = withContext(Dispatchers.IO) {
-        sync.create(alias, type, data, tags)
+        sync.create(alias, type, data, subType, tags)
     }
 
     suspend fun get(id: String): Secret = withContext(Dispatchers.IO) {
@@ -90,9 +91,10 @@ class AsyncSecretClient(private val sync: SecretClient) {
     suspend fun uploadFile(
         alias: String,
         file: File,
+        subType: SecretSubType? = null,
         tags: List<String> = emptyList()
     ): Secret = withContext(Dispatchers.IO) {
-        sync.uploadFile(alias, file, tags)
+        sync.uploadFile(alias, file, subType, null, tags)
     }
 
     suspend fun uploadFile(
@@ -100,9 +102,10 @@ class AsyncSecretClient(private val sync: SecretClient) {
         filename: String,
         content: ByteArray,
         contentType: String = "application/octet-stream",
+        subType: SecretSubType? = null,
         tags: List<String> = emptyList()
     ): Secret = withContext(Dispatchers.IO) {
-        sync.uploadFile(alias, filename, content, contentType, tags)
+        sync.uploadFile(alias, filename, content, contentType, subType, null, tags)
     }
 
     suspend fun downloadFile(id: String): ByteArray = withContext(Dispatchers.IO) {

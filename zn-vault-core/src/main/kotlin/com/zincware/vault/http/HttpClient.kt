@@ -456,7 +456,7 @@ private class FlexibleInstantDeserializer : com.fasterxml.jackson.databind.JsonD
     private val spaceFormatter = DateTimeFormatterBuilder()
         .appendPattern("yyyy-MM-dd HH:mm:ss")
         .optionalStart()
-        .appendFraction(ChronoField.MILLI_OF_SECOND, 0, 3, true)
+        .appendFraction(ChronoField.MICRO_OF_SECOND, 0, 6, true)
         .optionalEnd()
         .toFormatter()
 

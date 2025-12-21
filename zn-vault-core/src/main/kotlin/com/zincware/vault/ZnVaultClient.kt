@@ -7,7 +7,6 @@ import com.zincware.vault.auth.ApiKeyAuth
 import com.zincware.vault.auth.AuthClient
 import com.zincware.vault.auth.TokenManager
 import com.zincware.vault.auth.TokenManagerConfig
-import com.zincware.vault.certificates.CertificateClient
 import com.zincware.vault.health.HealthClient
 import com.zincware.vault.http.HttpClientConfig
 import com.zincware.vault.http.RetryPolicy
@@ -64,9 +63,6 @@ class ZnVaultClient private constructor(
 
     /** Key Management Service operations */
     val kms: KmsClient = KmsClient(httpClient)
-
-    /** Certificate lifecycle management operations */
-    val certificates: CertificateClient = CertificateClient(httpClient)
 
     /** Admin operations (tenants, users, roles, policies) */
     val admin: AdminClient = AdminClient(httpClient)
