@@ -224,6 +224,60 @@ val dataKey = client.kms.generateDataKey(key.keyId)
 // Use dataKey.plaintext for encryption, store dataKey.ciphertextBlob
 ```
 
+## Pattern Matching & Search
+
+Use wildcard patterns with `*` to query secrets by path:
+
+```kotlin
+// Find all secrets under a path
+val webSecrets = client.secrets.list(aliasPrefix = "web/*")
+
+// Find secrets containing "/env/" anywhere in the path
+val envSecrets = client.secrets.list(aliasPrefix = "*/env/*")
+
+// SQL-like pattern matching
+val dbSecrets = client.secrets.list(aliasPrefix = "*/env/secret_*")
+
+// Match multiple path segments
+// Matches: db-mysql/production, db-postgres/prod-us, etc.
+val prodDb = client.secrets.list(aliasPrefix = "db-*/prod*")
+
+// Combine pattern with type filter
+val credentials = client.secrets.list(
+    aliasPrefix = "*/production/*",
+    type = SecretType.CREDENTIAL
+)
+```
+
+**Java:**
+
+```java
+// Find all secrets under a path
+List<Secret> webSecrets = client.getSecrets().list(
+    new SecretFilter.Builder()
+        .aliasPrefix("web/*")
+        .build()
+);
+
+// Find secrets with pattern
+List<Secret> envSecrets = client.getSecrets().list(
+    new SecretFilter.Builder()
+        .aliasPrefix("*/env/*")
+        .type(SecretType.CREDENTIAL)
+        .build()
+);
+```
+
+**Pattern Examples:**
+
+| Pattern | Matches |
+|---------|---------|
+| `web/*` | `web/api`, `web/frontend/config` |
+| `*/env/*` | `app/env/vars`, `service/env/config` |
+| `db-*/prod*` | `db-mysql/production`, `db-postgres/prod-us` |
+| `*secret*` | `my-secret`, `api/secret/key`, `secret-config` |
+| `*/production/db-*` | `app/production/db-main`, `api/production/db-replica` |
+
 ## File Storage
 
 ```kotlin
