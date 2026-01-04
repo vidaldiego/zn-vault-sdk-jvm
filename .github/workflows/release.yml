@@ -2,8 +2,9 @@
 name: Release to Maven Central
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
