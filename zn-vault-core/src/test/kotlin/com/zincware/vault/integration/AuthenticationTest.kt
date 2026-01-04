@@ -53,21 +53,66 @@ class AuthenticationTest : BaseIntegrationTest() {
 
     @Test
     @Order(3)
-    @DisplayName("Login with valid regular user credentials")
-    fun testLoginRegularUser() {
+    @DisplayName("Login with valid reader user credentials")
+    fun testLoginReaderUser() {
         val response = client.login(
-            TestConfig.Users.REGULAR_USER_USERNAME,
-            TestConfig.Users.REGULAR_USER_PASSWORD
+            TestConfig.Users.READER_USERNAME,
+            TestConfig.Users.READER_PASSWORD
         )
 
         assertNotNull(response.accessToken)
         assertTrue(client.isAuthenticated())
 
-        println("✓ Logged in as regular user")
+        println("✓ Logged in as reader user")
     }
 
     @Test
     @Order(4)
+    @DisplayName("Login with valid writer user credentials")
+    fun testLoginWriterUser() {
+        val response = client.login(
+            TestConfig.Users.WRITER_USERNAME,
+            TestConfig.Users.WRITER_PASSWORD
+        )
+
+        assertNotNull(response.accessToken)
+        assertTrue(client.isAuthenticated())
+
+        println("✓ Logged in as writer user")
+    }
+
+    @Test
+    @Order(5)
+    @DisplayName("Login with valid KMS user credentials")
+    fun testLoginKmsUser() {
+        val response = client.login(
+            TestConfig.Users.KMS_USER_USERNAME,
+            TestConfig.Users.KMS_USER_PASSWORD
+        )
+
+        assertNotNull(response.accessToken)
+        assertTrue(client.isAuthenticated())
+
+        println("✓ Logged in as KMS user")
+    }
+
+    @Test
+    @Order(6)
+    @DisplayName("Login with valid certificate user credentials")
+    fun testLoginCertUser() {
+        val response = client.login(
+            TestConfig.Users.CERT_USER_USERNAME,
+            TestConfig.Users.CERT_USER_PASSWORD
+        )
+
+        assertNotNull(response.accessToken)
+        assertTrue(client.isAuthenticated())
+
+        println("✓ Logged in as certificate user")
+    }
+
+    @Test
+    @Order(10)
     @DisplayName("Login with invalid credentials should fail")
     fun testLoginInvalidCredentials() {
         assertThrows<AuthenticationException> {
@@ -79,7 +124,7 @@ class AuthenticationTest : BaseIntegrationTest() {
     }
 
     @Test
-    @Order(5)
+    @Order(11)
     @DisplayName("Login with wrong password should fail")
     fun testLoginWrongPassword() {
         assertThrows<AuthenticationException> {
@@ -92,7 +137,7 @@ class AuthenticationTest : BaseIntegrationTest() {
     // ==================== Current User Tests ====================
 
     @Test
-    @Order(10)
+    @Order(20)
     @DisplayName("Get current user info after login")
     fun testGetCurrentUser() {
         client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
@@ -105,7 +150,7 @@ class AuthenticationTest : BaseIntegrationTest() {
     }
 
     @Test
-    @Order(11)
+    @Order(21)
     @DisplayName("Get current user should fail without authentication")
     fun testGetCurrentUserUnauthenticated() {
         assertThrows<AuthenticationException> {
@@ -118,7 +163,7 @@ class AuthenticationTest : BaseIntegrationTest() {
     // ==================== Logout Tests ====================
 
     @Test
-    @Order(20)
+    @Order(30)
     @DisplayName("Logout clears authentication")
     fun testLogout() {
         client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
@@ -131,20 +176,20 @@ class AuthenticationTest : BaseIntegrationTest() {
     }
 
     // ==================== API Key Tests ====================
-    // NOTE: These tests are disabled because the server has a schema issue
-    // (api_keys table missing 'scope' column). Enable when server is fixed.
 
     private var createdApiKeyId: String? = null
 
     @Test
-    @Order(30)
+    @Order(40)
     @DisplayName("Create API key")
     fun testCreateApiKey() {
         client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
 
         val response = client.auth.createApiKey(
             name = "test-key-${testId}",
-            expiresIn = "30d"
+            permissions = listOf("secret:read:metadata", "secret:read:value"),
+            expiresInDays = 30,
+            tenantId = TestConfig.DEFAULT_TENANT
         )
 
         assertNotNull(response.apiKey.id)
@@ -157,7 +202,7 @@ class AuthenticationTest : BaseIntegrationTest() {
     }
 
     @Test
-    @Order(31)
+    @Order(41)
     @DisplayName("List API keys")
     fun testListApiKeys() {
         client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
@@ -172,7 +217,7 @@ class AuthenticationTest : BaseIntegrationTest() {
     }
 
     @Test
-    @Order(32)
+    @Order(42)
     @DisplayName("Use API key for authentication")
     fun testApiKeyAuthentication() {
         // First create an API key
@@ -180,7 +225,9 @@ class AuthenticationTest : BaseIntegrationTest() {
 
         val keyResponse = client.auth.createApiKey(
             name = "auth-test-key-${testId}",
-            expiresIn = "1d"
+            permissions = listOf("*"),
+            expiresInDays = 1,
+            tenantId = TestConfig.DEFAULT_TENANT
         )
 
         // Create new client with API key
@@ -201,7 +248,7 @@ class AuthenticationTest : BaseIntegrationTest() {
     }
 
     @Test
-    @Order(33)
+    @Order(43)
     @DisplayName("Rotate API key")
     fun testRotateApiKey() {
         client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
@@ -209,7 +256,9 @@ class AuthenticationTest : BaseIntegrationTest() {
         // Create a key to rotate
         val originalKey = client.auth.createApiKey(
             name = "rotate-test-key-${testId}",
-            expiresIn = "1d"
+            permissions = listOf("secret:read:*"),
+            expiresInDays = 1,
+            tenantId = TestConfig.DEFAULT_TENANT
         )
 
         // Rotate the key (note: rotation creates a new key with new ID)
@@ -228,7 +277,7 @@ class AuthenticationTest : BaseIntegrationTest() {
     }
 
     @Test
-    @Order(34)
+    @Order(44)
     @DisplayName("Delete API key")
     fun testDeleteApiKey() {
         client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
@@ -236,7 +285,9 @@ class AuthenticationTest : BaseIntegrationTest() {
         // Create a key to delete
         val keyResponse = client.auth.createApiKey(
             name = "delete-test-key-${testId}",
-            expiresIn = "1d"
+            permissions = listOf("secret:read:metadata"),
+            expiresInDays = 1,
+            tenantId = TestConfig.DEFAULT_TENANT
         )
 
         // Delete it
@@ -248,40 +299,7 @@ class AuthenticationTest : BaseIntegrationTest() {
     }
 
     @Test
-    @Order(35)
-    @DisplayName("Get current API key info when authenticated via API key")
-    @Disabled("Server endpoint /auth/api-keys/current not implemented yet")
-    fun testGetCurrentApiKey() {
-        // First create an API key
-        client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
-
-        val keyResponse = client.auth.createApiKey(
-            name = "self-test-key-${testId}",
-            expiresIn = "1d"
-        )
-
-        // Create new client with API key
-        val apiKeyClient = ZnVaultClient.builder()
-            .baseUrl(TestConfig.BASE_URL)
-            .apiKey(keyResponse.key)
-            .insecureTls()
-            .build()
-
-        // Get current API key info
-        val currentKey = apiKeyClient.auth.getCurrentApiKey()
-
-        assertNotNull(currentKey)
-        assertEquals(keyResponse.apiKey.name, currentKey.name)
-        assertEquals(keyResponse.apiKey.prefix, currentKey.prefix)
-
-        println("✓ Got current API key info: ${currentKey.name} (${currentKey.prefix}...)")
-
-        // Cleanup
-        client.auth.deleteApiKey(keyResponse.apiKey.id)
-    }
-
-    @Test
-    @Order(36)
+    @Order(46)
     @DisplayName("Self-rotate current API key")
     fun testSelfRotateApiKey() {
         // First create an API key
@@ -289,7 +307,9 @@ class AuthenticationTest : BaseIntegrationTest() {
 
         val originalKey = client.auth.createApiKey(
             name = "self-rotate-test-key-${testId}",
-            expiresIn = "1d"
+            permissions = listOf("*"),
+            expiresInDays = 1,
+            tenantId = TestConfig.DEFAULT_TENANT
         )
 
         // Create new client with API key
@@ -315,7 +335,7 @@ class AuthenticationTest : BaseIntegrationTest() {
     // ==================== 2FA Status Tests ====================
 
     @Test
-    @Order(40)
+    @Order(50)
     @DisplayName("Get 2FA status")
     fun testGet2faStatus() {
         client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
@@ -329,7 +349,7 @@ class AuthenticationTest : BaseIntegrationTest() {
     // ==================== Password Change Tests ====================
 
     @Test
-    @Order(50)
+    @Order(60)
     @DisplayName("Change password requires current password")
     fun testChangePasswordRequiresCurrentPassword() {
         client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)

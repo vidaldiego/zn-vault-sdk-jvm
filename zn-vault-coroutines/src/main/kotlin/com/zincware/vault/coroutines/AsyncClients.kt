@@ -535,9 +535,14 @@ class AsyncAuthClient(private val sync: AuthClient) {
 
     suspend fun createApiKey(
         name: String,
-        expiresIn: String = "90d"
+        permissions: List<String>,
+        expiresInDays: Int? = null,
+        description: String? = null,
+        ipAllowlist: List<String>? = null,
+        conditions: ApiKeyConditions? = null,
+        tenantId: String? = null
     ): CreateApiKeyResponse = withContext(Dispatchers.IO) {
-        sync.createApiKey(name, expiresIn)
+        sync.createApiKey(name, permissions, expiresInDays, description, ipAllowlist, conditions, tenantId)
     }
 
     suspend fun listApiKeys(): List<ApiKey> = withContext(Dispatchers.IO) {

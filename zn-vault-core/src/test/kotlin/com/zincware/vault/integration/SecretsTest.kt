@@ -23,8 +23,9 @@ class SecretsTest : BaseIntegrationTest() {
     private val createdSecretIds = mutableListOf<String>()
 
     override fun createClient(): ZnVaultClient {
-        // Use regular user for secrets tests - only regular users can decrypt
-        return TestConfig.createRegularUserClient()
+        // Use tenant admin - has full tenant permissions
+        // Tenant has allow_admin_secret_access=true so admin can decrypt secrets
+        return TestConfig.createTenantAdminClient()
     }
 
     override fun cleanup() {

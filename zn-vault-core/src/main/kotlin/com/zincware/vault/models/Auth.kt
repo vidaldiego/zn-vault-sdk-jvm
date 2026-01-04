@@ -2,6 +2,7 @@
 package com.zincware.vault.models
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.Instant
 
@@ -72,6 +73,38 @@ data class ForceChangePasswordRequest(
 )
 
 /**
+ * Time range condition for API key access.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiKeyTimeRange(
+    val start: String? = null,
+    val end: String? = null,
+    val timezone: String? = null
+)
+
+/**
+ * Resource-specific conditions for API keys.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiKeyResourceConditions(
+    val certificates: List<String>? = null,
+    val secrets: List<String>? = null
+)
+
+/**
+ * Inline ABAC conditions for API keys.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiKeyConditions(
+    val ip: List<String>? = null,
+    val timeRange: ApiKeyTimeRange? = null,
+    val methods: List<String>? = null,
+    val resources: ApiKeyResourceConditions? = null,
+    val aliases: List<String>? = null,
+    val resourceTags: Map<String, String>? = null
+)
+
+/**
  * API key information.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -80,10 +113,14 @@ data class ApiKey(
     val name: String,
     val prefix: String? = null,
     @JsonProperty("user_id") val userId: String? = null,
+    @JsonProperty("tenant_id") val tenantId: String? = null,
     @JsonProperty("created_at") val createdAt: Instant? = null,
     @JsonProperty("expires_at") val expiresAt: Instant? = null,
     @JsonProperty("last_used") val lastUsed: Instant? = null,
-    val scope: String? = null
+    val scope: String? = null,
+    val permissions: List<String>? = null,
+    @JsonProperty("ip_allowlist") val ipAllowlist: List<String>? = null,
+    val conditions: ApiKeyConditions? = null
 )
 
 /**
@@ -97,11 +134,22 @@ enum class ApiKeyScope {
 
 /**
  * Request to create an API key.
+ *
+ * @property name Name for the API key
+ * @property permissions Required list of permissions for the key
+ * @property expiresInDays Optional expiration in days (default: 90)
+ * @property description Optional description
+ * @property ipAllowlist Optional list of allowed IPs/CIDRs
+ * @property conditions Optional inline ABAC conditions
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateApiKeyRequest(
     val name: String,
-    @JsonProperty("expires_in") val expiresIn: String = "90d",
-    val permissions: List<String>? = null
+    val permissions: List<String>,
+    @JsonProperty("expiresInDays") val expiresInDays: Int? = null,
+    val description: String? = null,
+    @JsonProperty("ip_allowlist") val ipAllowlist: List<String>? = null,
+    val conditions: ApiKeyConditions? = null
 )
 
 /**

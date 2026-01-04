@@ -1,6 +1,7 @@
 // Path: zn-vault-core/src/test/kotlin/com/zincware/vault/integration/KmsTest.kt
 package com.zincware.vault.integration
 
+import com.zincware.vault.ZnVaultClient
 import com.zincware.vault.models.*
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
@@ -13,6 +14,11 @@ import java.util.Base64
 class KmsTest : BaseIntegrationTest() {
 
     private val createdKeyIds = mutableListOf<String>()
+
+    override fun createClient(): ZnVaultClient {
+        // Use tenant admin - scoped to sdk-test tenant, has all tenant permissions
+        return TestConfig.createTenantAdminClient()
+    }
 
     override fun cleanup() {
         // Schedule deletion for created keys

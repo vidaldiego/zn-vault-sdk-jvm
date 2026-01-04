@@ -85,15 +85,40 @@ class AuthClient internal constructor(
      * Create a new API key.
      *
      * @param name Name for the API key
-     * @param expiresIn Expiration duration (e.g., "90d", "1y")
+     * @param permissions Required list of permissions for the key (e.g., ["secret:read:*"])
+     * @param expiresInDays Optional expiration in days (default: 90)
+     * @param description Optional description
+     * @param ipAllowlist Optional list of allowed IPs/CIDRs
+     * @param conditions Optional inline ABAC conditions
+     * @param tenantId Required for superadmin creating tenant-scoped keys
      * @return Created API key (key value is only shown once!)
      */
     fun createApiKey(
         name: String,
-        expiresIn: String = "90d"
+        permissions: List<String>,
+        expiresInDays: Int? = null,
+        description: String? = null,
+        ipAllowlist: List<String>? = null,
+        conditions: ApiKeyConditions? = null,
+        tenantId: String? = null
     ): CreateApiKeyResponse {
-        val request = CreateApiKeyRequest(name, expiresIn)
-        return httpClient.post("/auth/api-keys", request, CreateApiKeyResponse::class.java)
+        val request = CreateApiKeyRequest(
+            name = name,
+            permissions = permissions,
+            expiresInDays = expiresInDays,
+            description = description,
+            ipAllowlist = ipAllowlist,
+            conditions = conditions
+        )
+
+        // Tenant ID is passed as query parameter
+        val path = if (tenantId != null) {
+            "/auth/api-keys?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
+        } else {
+            "/auth/api-keys"
+        }
+
+        return httpClient.post(path, request, CreateApiKeyResponse::class.java)
     }
 
     /**

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Instant
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
@@ -450,13 +451,26 @@ private class LoggingInterceptor(
  * Flexible Instant deserializer that handles multiple date formats:
  * - ISO-8601: 2025-12-02T13:44:26.191Z
  * - Space-separated: 2025-12-02 13:46:40
+ * - PostgreSQL with offset: 2026-01-04 22:14:37.688+00
  */
 private class FlexibleInstantDeserializer : com.fasterxml.jackson.databind.JsonDeserializer<Instant>() {
 
+    // Space-separated without timezone
     private val spaceFormatter = DateTimeFormatterBuilder()
         .appendPattern("yyyy-MM-dd HH:mm:ss")
         .optionalStart()
         .appendFraction(ChronoField.MICRO_OF_SECOND, 0, 6, true)
+        .optionalEnd()
+        .toFormatter()
+
+    // PostgreSQL format with timezone offset (e.g., +00)
+    private val postgresFormatter = DateTimeFormatterBuilder()
+        .appendPattern("yyyy-MM-dd HH:mm:ss")
+        .optionalStart()
+        .appendFraction(ChronoField.MICRO_OF_SECOND, 0, 6, true)
+        .optionalEnd()
+        .optionalStart()
+        .appendOffset("+HH", "+00")
         .optionalEnd()
         .toFormatter()
 
@@ -472,10 +486,16 @@ private class FlexibleInstantDeserializer : com.fasterxml.jackson.databind.JsonD
             Instant.parse(text)
         } catch (e: Exception) {
             try {
-                // Try space-separated format
-                LocalDateTime.parse(text, spaceFormatter).toInstant(ZoneOffset.UTC)
+                // Try PostgreSQL format with offset (e.g., "2026-01-04 22:14:37.688+00")
+                val odt = OffsetDateTime.parse(text, postgresFormatter)
+                odt.toInstant()
             } catch (e2: Exception) {
-                throw ctxt.weirdStringException(text, Instant::class.java, "Cannot parse date: $text")
+                try {
+                    // Try space-separated format without timezone (assume UTC)
+                    LocalDateTime.parse(text, spaceFormatter).toInstant(ZoneOffset.UTC)
+                } catch (e3: Exception) {
+                    throw ctxt.weirdStringException(text, Instant::class.java, "Cannot parse date: $text")
+                }
             }
         }
     }
