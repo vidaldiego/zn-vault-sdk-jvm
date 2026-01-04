@@ -19,7 +19,7 @@ nmcpAggregation {
     centralPortal {
         username = findProperty("mavenCentralUsername") as String? ?: System.getenv("MAVEN_CENTRAL_USERNAME") ?: ""
         password = findProperty("mavenCentralPassword") as String? ?: System.getenv("MAVEN_CENTRAL_PASSWORD") ?: ""
-        publishingType = "USER_MANAGED"
+        publishingType = "AUTOMATIC"
     }
     publishAllProjectsProbablyBreakingProjectIsolation()
 }
