@@ -210,4 +210,185 @@ class AuthClient internal constructor(
     fun get2faStatus(): TwoFactorStatus {
         return httpClient.get("/auth/2fa/status", TwoFactorStatus::class.java)
     }
+
+    // ==================== Managed API Keys ====================
+
+    /**
+     * Create a managed API key with auto-rotation configuration.
+     *
+     * Managed keys automatically rotate based on the configured mode:
+     * - SCHEDULED: Rotates at fixed intervals (requires rotationInterval)
+     * - ON_USE: Rotates after being used (TTL resets on each use)
+     * - ON_BIND: Rotates each time bind is called
+     *
+     * @param name Unique name for the managed key
+     * @param permissions List of permissions for the key
+     * @param rotationMode Rotation mode
+     * @param rotationInterval Interval for scheduled rotation (e.g., "24h", "7d")
+     * @param gracePeriod Grace period for smooth transitions (e.g., "5m")
+     * @param description Optional description
+     * @param expiresInDays Optional expiration in days
+     * @param tenantId Required for superadmin creating tenant-scoped keys
+     * @return The created managed key metadata (use bind to get the key value)
+     */
+    fun createManagedApiKey(
+        name: String,
+        permissions: List<String>,
+        rotationMode: RotationMode,
+        rotationInterval: String? = null,
+        gracePeriod: String? = null,
+        description: String? = null,
+        expiresInDays: Int? = null,
+        tenantId: String? = null
+    ): CreateManagedApiKeyResponse {
+        val request = CreateManagedApiKeyRequest(
+            name = name,
+            permissions = permissions,
+            rotationMode = rotationMode,
+            rotationInterval = rotationInterval,
+            gracePeriod = gracePeriod,
+            description = description,
+            expiresInDays = expiresInDays
+        )
+
+        val path = if (tenantId != null) {
+            "/auth/api-keys/managed?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
+        } else {
+            "/auth/api-keys/managed"
+        }
+
+        return httpClient.post(path, request, CreateManagedApiKeyResponse::class.java)
+    }
+
+    /**
+     * List managed API keys.
+     *
+     * @param tenantId Optional tenant ID filter (for superadmin)
+     * @return List of managed keys
+     */
+    fun listManagedApiKeys(tenantId: String? = null): List<ManagedApiKey> {
+        val path = if (tenantId != null) {
+            "/auth/api-keys/managed?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
+        } else {
+            "/auth/api-keys/managed"
+        }
+
+        val response = httpClient.get(path, ManagedApiKeyListResponse::class.java)
+        return response.keys
+    }
+
+    /**
+     * Get a managed API key by name.
+     *
+     * @param name The managed key name
+     * @param tenantId Optional tenant ID (for cross-tenant access)
+     * @return The managed key metadata
+     */
+    fun getManagedApiKey(name: String, tenantId: String? = null): ManagedApiKey {
+        val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
+        val path = if (tenantId != null) {
+            "/auth/api-keys/managed/$encodedName?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
+        } else {
+            "/auth/api-keys/managed/$encodedName"
+        }
+
+        return httpClient.get(path, ManagedApiKey::class.java)
+    }
+
+    /**
+     * Bind to a managed API key to get the current key value.
+     *
+     * This is the primary method for agents to obtain their API key.
+     * The response includes rotation metadata to help determine when
+     * to re-bind for a new key.
+     *
+     * Security: This endpoint requires the caller to already have a valid
+     * API key (the current one, even during grace period). This prevents
+     * unauthorized access to managed keys.
+     *
+     * @param name The managed key name
+     * @param tenantId Optional tenant ID (for cross-tenant access)
+     * @return The current key value and rotation metadata
+     */
+    fun bindManagedApiKey(name: String, tenantId: String? = null): ManagedKeyBindResponse {
+        val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
+        val path = if (tenantId != null) {
+            "/auth/api-keys/managed/$encodedName/bind?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
+        } else {
+            "/auth/api-keys/managed/$encodedName/bind"
+        }
+
+        return httpClient.postEmpty(path, ManagedKeyBindResponse::class.java)
+    }
+
+    /**
+     * Force rotate a managed API key.
+     *
+     * Creates a new key immediately, regardless of the rotation schedule.
+     * The old key remains valid during the grace period.
+     *
+     * @param name The managed key name
+     * @param tenantId Optional tenant ID (for cross-tenant access)
+     * @return The new key value and rotation info
+     */
+    fun rotateManagedApiKey(name: String, tenantId: String? = null): ManagedKeyRotateResponse {
+        val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
+        val path = if (tenantId != null) {
+            "/auth/api-keys/managed/$encodedName/rotate?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
+        } else {
+            "/auth/api-keys/managed/$encodedName/rotate"
+        }
+
+        return httpClient.postEmpty(path, ManagedKeyRotateResponse::class.java)
+    }
+
+    /**
+     * Update managed API key configuration.
+     *
+     * @param name The managed key name
+     * @param rotationInterval New rotation interval
+     * @param gracePeriod New grace period
+     * @param enabled Enable/disable the key
+     * @param tenantId Optional tenant ID (for cross-tenant access)
+     * @return Updated managed key metadata
+     */
+    fun updateManagedApiKeyConfig(
+        name: String,
+        rotationInterval: String? = null,
+        gracePeriod: String? = null,
+        enabled: Boolean? = null,
+        tenantId: String? = null
+    ): ManagedApiKey {
+        val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
+        val path = if (tenantId != null) {
+            "/auth/api-keys/managed/$encodedName/config?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
+        } else {
+            "/auth/api-keys/managed/$encodedName/config"
+        }
+
+        val request = UpdateManagedApiKeyConfigRequest(
+            rotationInterval = rotationInterval,
+            gracePeriod = gracePeriod,
+            enabled = enabled
+        )
+
+        return httpClient.patch(path, request, ManagedApiKey::class.java)
+    }
+
+    /**
+     * Delete a managed API key.
+     *
+     * @param name The managed key name
+     * @param tenantId Optional tenant ID (for cross-tenant access)
+     */
+    fun deleteManagedApiKey(name: String, tenantId: String? = null) {
+        val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
+        val path = if (tenantId != null) {
+            "/auth/api-keys/managed/$encodedName?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
+        } else {
+            "/auth/api-keys/managed/$encodedName"
+        }
+
+        httpClient.delete(path)
+    }
 }

@@ -244,3 +244,128 @@ data class MeResponse(
     val user: User,
     val authMethod: String? = null
 )
+
+// ==================== Managed API Keys ====================
+
+/**
+ * Rotation mode for managed API keys.
+ *
+ * - SCHEDULED: Key rotates at fixed intervals (e.g., every 24 hours)
+ * - ON_USE: Key rotates after being used (TTL resets on each use)
+ * - ON_BIND: Key rotates each time bind is called
+ */
+enum class RotationMode {
+    @JsonProperty("scheduled") SCHEDULED,
+    @JsonProperty("on-use") ON_USE,
+    @JsonProperty("on-bind") ON_BIND
+}
+
+/**
+ * Managed API key with auto-rotation configuration.
+ *
+ * Managed keys automatically rotate based on the configured mode,
+ * providing seamless credential rotation for services and agents.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ManagedApiKey(
+    val id: String,
+    val name: String,
+    val tenantId: String,
+    val permissions: List<String>,
+    val rotationMode: RotationMode,
+    val gracePeriod: String,
+    val enabled: Boolean,
+    val createdAt: Instant? = null,
+    val description: String? = null,
+    val rotationInterval: String? = null,
+    val lastRotatedAt: Instant? = null,
+    val nextRotationAt: Instant? = null,
+    val createdBy: String? = null,
+    val updatedAt: Instant? = null
+)
+
+/**
+ * Response from binding to a managed API key.
+ *
+ * This is what agents use to get the current key value and rotation metadata.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ManagedKeyBindResponse(
+    /** The API key ID */
+    val id: String,
+    /** The current API key value - use this for authentication */
+    val key: String,
+    /** Key prefix for identification */
+    val prefix: String,
+    /** Managed key name */
+    val name: String,
+    /** When this key expires */
+    val expiresAt: Instant? = null,
+    /** Grace period duration */
+    val gracePeriod: String,
+    /** Rotation mode */
+    val rotationMode: RotationMode,
+    /** Permissions on the key */
+    val permissions: List<String>,
+    /** When the next rotation will occur (helps SDK know when to re-bind) */
+    val nextRotationAt: Instant? = null,
+    /** When the grace period expires (after this, old key stops working) */
+    val graceExpiresAt: Instant? = null
+)
+
+/**
+ * Response from rotating a managed API key.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ManagedKeyRotateResponse(
+    /** The new API key value */
+    val key: String,
+    /** Managed key metadata */
+    val apiKey: ManagedApiKey,
+    /** When the old key expires (grace period end) */
+    val graceExpiresAt: Instant? = null,
+    /** Optional message */
+    val message: String? = null
+)
+
+/**
+ * Request to create a managed API key.
+ */
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateManagedApiKeyRequest(
+    val name: String,
+    val permissions: List<String>,
+    val rotationMode: RotationMode,
+    val rotationInterval: String? = null,
+    val gracePeriod: String? = null,
+    val description: String? = null,
+    val expiresInDays: Int? = null
+)
+
+/**
+ * Response when creating a managed API key.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class CreateManagedApiKeyResponse(
+    val apiKey: ManagedApiKey,
+    val message: String? = null
+)
+
+/**
+ * Response listing managed API keys.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ManagedApiKeyListResponse(
+    val keys: List<ManagedApiKey> = emptyList(),
+    val total: Int = 0
+)
+
+/**
+ * Request to update managed API key configuration.
+ */
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateManagedApiKeyConfigRequest(
+    val rotationInterval: String? = null,
+    val gracePeriod: String? = null,
+    val enabled: Boolean? = null
+)
