@@ -369,3 +369,104 @@ data class UpdateManagedApiKeyConfigRequest(
     val gracePeriod: String? = null,
     val enabled: Boolean? = null
 )
+
+// ==================== Registration Tokens (Agent Bootstrap) ====================
+
+/**
+ * Status for registration tokens.
+ */
+enum class RegistrationTokenStatus {
+    @JsonProperty("active") ACTIVE,
+    @JsonProperty("used") USED,
+    @JsonProperty("expired") EXPIRED,
+    @JsonProperty("revoked") REVOKED
+}
+
+/**
+ * Registration token for agent bootstrapping.
+ *
+ * Tokens are one-time use and allow agents to exchange them for a
+ * managed API key binding without prior authentication.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class RegistrationToken(
+    val id: String,
+    val prefix: String,
+    val managedKeyName: String,
+    val tenantId: String,
+    val createdBy: String,
+    val status: RegistrationTokenStatus,
+    val createdAt: Instant? = null,
+    val expiresAt: Instant? = null,
+    val usedAt: Instant? = null,
+    val usedByIp: String? = null,
+    val revokedAt: Instant? = null,
+    val description: String? = null,
+    val createdByUsername: String? = null
+)
+
+/**
+ * Request to create a registration token.
+ */
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateRegistrationTokenRequest(
+    /** Token expiration (e.g., "1h", "24h"). Min 1m, max 24h. */
+    val expiresIn: String? = null,
+    /** Optional description for audit trail. */
+    val description: String? = null
+)
+
+/**
+ * Response from creating a registration token.
+ *
+ * The full token value is only shown once - save it immediately!
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class CreateRegistrationTokenResponse(
+    /** The full token value - shown only once! */
+    val token: String,
+    /** Token prefix for identification (e.g., "zrt_abc1") */
+    val prefix: String,
+    /** Token ID for management operations */
+    val id: String,
+    /** The managed key this token is for */
+    val managedKeyName: String,
+    /** Tenant ID */
+    val tenantId: String,
+    /** When the token expires */
+    val expiresAt: Instant? = null,
+    /** Optional description */
+    val description: String? = null
+)
+
+/**
+ * Response listing registration tokens.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class RegistrationTokenListResponse(
+    val tokens: List<RegistrationToken> = emptyList()
+)
+
+/**
+ * Request to bootstrap an agent with a registration token.
+ */
+data class BootstrapRequest(
+    val token: String
+)
+
+/**
+ * Response from the agent bootstrap endpoint.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class BootstrapResponse(
+    /** The API key value */
+    val key: String,
+    /** Managed key name */
+    val name: String,
+    /** Permissions on the key */
+    val permissions: List<String>,
+    /** When the key expires */
+    val expiresAt: Instant? = null,
+    /** Notice about token consumption */
+    @JsonProperty("_notice") val notice: String? = null
+)

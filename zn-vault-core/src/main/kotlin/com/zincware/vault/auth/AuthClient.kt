@@ -391,4 +391,107 @@ class AuthClient internal constructor(
 
         httpClient.delete(path)
     }
+
+    // ==================== Registration Tokens (Agent Bootstrap) ====================
+
+    /**
+     * Create a registration token for agent bootstrapping.
+     *
+     * Registration tokens are one-time use tokens that allow agents to
+     * obtain their managed API key without prior authentication.
+     *
+     * @param managedKeyName The managed key to create a token for
+     * @param expiresIn Token expiration (e.g., "1h", "24h"). Min 1m, max 24h.
+     * @param description Optional description for audit trail
+     * @param tenantId Optional tenant ID (for cross-tenant access)
+     * @return The created token (shown only once - save it immediately!)
+     */
+    fun createRegistrationToken(
+        managedKeyName: String,
+        expiresIn: String? = null,
+        description: String? = null,
+        tenantId: String? = null
+    ): CreateRegistrationTokenResponse {
+        val encodedName = java.net.URLEncoder.encode(managedKeyName, "UTF-8")
+        val path = if (tenantId != null) {
+            "/auth/api-keys/managed/$encodedName/registration-tokens?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
+        } else {
+            "/auth/api-keys/managed/$encodedName/registration-tokens"
+        }
+
+        val request = CreateRegistrationTokenRequest(
+            expiresIn = expiresIn,
+            description = description
+        )
+
+        return httpClient.post(path, request, CreateRegistrationTokenResponse::class.java)
+    }
+
+    /**
+     * List registration tokens for a managed key.
+     *
+     * @param managedKeyName The managed key name
+     * @param includeUsed Include tokens that have been used
+     * @param tenantId Optional tenant ID (for cross-tenant access)
+     * @return List of registration tokens
+     */
+    fun listRegistrationTokens(
+        managedKeyName: String,
+        includeUsed: Boolean = false,
+        tenantId: String? = null
+    ): List<RegistrationToken> {
+        val encodedName = java.net.URLEncoder.encode(managedKeyName, "UTF-8")
+        val queryParams = mutableListOf<String>()
+        if (includeUsed) queryParams.add("includeUsed=true")
+        if (tenantId != null) queryParams.add("tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}")
+
+        val path = if (queryParams.isNotEmpty()) {
+            "/auth/api-keys/managed/$encodedName/registration-tokens?${queryParams.joinToString("&")}"
+        } else {
+            "/auth/api-keys/managed/$encodedName/registration-tokens"
+        }
+
+        val response = httpClient.get(path, RegistrationTokenListResponse::class.java)
+        return response.tokens
+    }
+
+    /**
+     * Revoke a registration token.
+     *
+     * Prevents the token from being used for bootstrapping.
+     *
+     * @param managedKeyName The managed key name
+     * @param tokenId The token ID to revoke
+     * @param tenantId Optional tenant ID (for cross-tenant access)
+     */
+    fun revokeRegistrationToken(
+        managedKeyName: String,
+        tokenId: String,
+        tenantId: String? = null
+    ) {
+        val encodedName = java.net.URLEncoder.encode(managedKeyName, "UTF-8")
+        val path = if (tenantId != null) {
+            "/auth/api-keys/managed/$encodedName/registration-tokens/$tokenId?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
+        } else {
+            "/auth/api-keys/managed/$encodedName/registration-tokens/$tokenId"
+        }
+
+        httpClient.delete(path)
+    }
+
+    /**
+     * Bootstrap an agent using a registration token.
+     *
+     * This is the unauthenticated endpoint used by agents to exchange a
+     * one-time registration token for a managed API key binding.
+     *
+     * Note: This method does not require prior authentication.
+     *
+     * @param token The registration token (format: zrt_...)
+     * @return The API key binding response
+     */
+    fun bootstrap(token: String): BootstrapResponse {
+        val request = BootstrapRequest(token)
+        return httpClient.post("/agent/bootstrap", request, BootstrapResponse::class.java)
+    }
 }
