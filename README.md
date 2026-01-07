@@ -12,7 +12,8 @@ Official Java/Kotlin client library for ZN-Vault secrets management.
 ## Features
 
 - **Full API Coverage**: Secrets, KMS, tenants, users, roles, policies, audit logs
-- **Multiple Auth Methods**: JWT tokens and API keys
+- **Multiple Auth Methods**: JWT tokens, API keys, file-based API keys with auto-refresh
+- **Agent Integration**: Seamless key rotation support for zn-vault-agent managed deployments
 - **Async Support**: Kotlin Coroutines and Java CompletableFuture
 - **TLS/mTLS**: Custom CA certificates and client certificates
 - **Retry Logic**: Configurable exponential backoff with jitter
@@ -25,10 +26,10 @@ Official Java/Kotlin client library for ZN-Vault secrets management.
 ```kotlin
 dependencies {
     // Core SDK
-    implementation("io.github.vidaldiego:zn-vault-core:1.0.0")
+    implementation("io.github.vidaldiego:zn-vault-core:1.8.0")
 
     // Optional: Kotlin Coroutines support
-    implementation("io.github.vidaldiego:zn-vault-coroutines:1.0.0")
+    implementation("io.github.vidaldiego:zn-vault-coroutines:1.8.0")
 }
 ```
 
@@ -36,8 +37,8 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'io.github.vidaldiego:zn-vault-core:1.0.0'
-    implementation 'io.github.vidaldiego:zn-vault-coroutines:1.0.0'
+    implementation 'io.github.vidaldiego:zn-vault-core:1.8.0'
+    implementation 'io.github.vidaldiego:zn-vault-coroutines:1.8.0'
 }
 ```
 
@@ -47,14 +48,14 @@ dependencies {
 <dependency>
     <groupId>io.github.vidaldiego</groupId>
     <artifactId>zn-vault-core</artifactId>
-    <version>1.0.0</version>
+    <version>1.8.0</version>
 </dependency>
 
 <!-- Optional: Kotlin Coroutines support -->
 <dependency>
     <groupId>io.github.vidaldiego</groupId>
     <artifactId>zn-vault-coroutines</artifactId>
-    <version>1.0.0</version>
+    <version>1.8.0</version>
 </dependency>
 ```
 
@@ -143,6 +144,64 @@ val secrets = client.secrets.list()
 
 // Logout when done
 client.logout()
+```
+
+### Agent-Managed Deployments (Recommended for Services)
+
+When running applications managed by `zn-vault-agent`, the agent handles API key rotation
+automatically. The SDK supports reading API keys from files and automatically refreshing
+when keys rotate:
+
+```kotlin
+// Recommended: Auto-configure from environment variables
+// Reads ZINC_CONFIG_VAULT_URL and ZINC_CONFIG_VAULT_API_KEY (or _FILE variant)
+val client = ZnVaultClient.fromEnv()
+
+// The client handles key rotation transparently:
+// 1. On 401, re-reads the API key from the file
+// 2. If the key changed (rotated by agent), retries the request
+// 3. Your application never needs to restart for key rotation
+val secret = client.secrets.get("my-secret")
+```
+
+**Java:**
+
+```java
+// Auto-configure from environment
+ZnVaultClient client = ZnVaultClient.fromEnv();
+
+// Or explicitly specify the file path
+ZnVaultClient client = ZnVaultClient.builder()
+    .baseUrl("https://vault.example.com:8443")
+    .apiKeyFile("/run/zn-vault-agent/secrets/VAULT_API_KEY")
+    .build();
+```
+
+**Environment Variables:**
+
+| Variable | Description |
+|----------|-------------|
+| `ZINC_CONFIG_VAULT_URL` | Vault server URL |
+| `ZINC_CONFIG_VAULT_API_KEY` | Direct API key value |
+| `ZINC_CONFIG_VAULT_API_KEY_FILE` | Path to file containing API key (preferred) |
+
+When `*_FILE` is set, the SDK reads the key from the file and automatically handles
+rotation by re-reading the file on authentication errors.
+
+**Builder Methods:**
+
+```kotlin
+// Read API key from a specific file (with auto-refresh on rotation)
+val client = ZnVaultClient.builder()
+    .baseUrl("https://vault.example.com:8443")
+    .apiKeyFile("/path/to/api-key-file")
+    .build()
+
+// Auto-detect from environment (checks MY_API_KEY_FILE, then MY_API_KEY)
+val client = ZnVaultClient.builder()
+    .baseUrl("https://vault.example.com:8443")
+    .apiKeyFromEnv("MY_API_KEY")
+    .build()
 ```
 
 ## Async Operations
