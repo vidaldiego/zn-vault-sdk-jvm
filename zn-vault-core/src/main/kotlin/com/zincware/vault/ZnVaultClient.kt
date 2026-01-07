@@ -5,9 +5,11 @@ import com.zincware.vault.admin.AdminClient
 import com.zincware.vault.audit.AuditClient
 import com.zincware.vault.auth.ApiKeyAuth
 import com.zincware.vault.auth.AuthClient
+import com.zincware.vault.auth.FileApiKeyAuth
 import com.zincware.vault.auth.TokenManager
 import com.zincware.vault.auth.TokenManagerConfig
 import com.zincware.vault.health.HealthClient
+import com.zincware.vault.http.AuthProvider
 import com.zincware.vault.http.HttpClientConfig
 import com.zincware.vault.http.RetryPolicy
 import com.zincware.vault.http.TlsConfig
@@ -141,6 +143,16 @@ class ZnVaultClient private constructor(
         const val DEFAULT_BASE_URL = "https://vault.zincapp.com"
 
         /**
+         * Default environment variable name for the API key.
+         */
+        const val DEFAULT_API_KEY_ENV = "ZINC_CONFIG_VAULT_API_KEY"
+
+        /**
+         * Default environment variable name for the vault URL.
+         */
+        const val DEFAULT_URL_ENV = "ZINC_CONFIG_VAULT_URL"
+
+        /**
          * Create a new builder for ZnVaultClient.
          */
         @JvmStatic
@@ -180,6 +192,71 @@ class ZnVaultClient private constructor(
             .baseUrl(baseUrl)
             .apiKey(apiKey)
             .build()
+
+        /**
+         * Create a client from environment variables with automatic credential refresh.
+         *
+         * This is the recommended way to create a client in applications managed
+         * by zn-vault-agent, as it supports automatic key rotation.
+         *
+         * ## Environment Variables
+         *
+         * The method checks for credentials in this order:
+         *
+         * 1. `ZINC_CONFIG_VAULT_API_KEY_FILE` - Path to file containing API key (preferred)
+         * 2. `ZINC_CONFIG_VAULT_API_KEY` - Direct API key value (fallback)
+         *
+         * For the vault URL:
+         * 1. `ZINC_CONFIG_VAULT_URL` - Vault server URL
+         * 2. Falls back to default URL if not set
+         *
+         * ## Key Rotation Support
+         *
+         * When using `_FILE` mode, the client automatically handles key rotation:
+         * - On 401 errors, re-reads the API key from the file
+         * - If the key changed (rotated by agent), retries the request
+         * - This is transparent to the application
+         *
+         * ## Example
+         *
+         * ```kotlin
+         * // Agent injects:
+         * //   ZINC_CONFIG_VAULT_URL=https://vault.example.com
+         * //   ZINC_CONFIG_VAULT_API_KEY_FILE=/run/zn-vault-agent/secrets/ZINC_CONFIG_VAULT_API_KEY
+         *
+         * val client = ZnVaultClient.fromEnv()
+         * val secret = client.secrets.get("my-secret")  // Auto-refreshes on key rotation
+         * ```
+         *
+         * @return ZnVaultClient configured from environment
+         * @throws IllegalStateException if required environment variables are not set
+         */
+        @JvmStatic
+        fun fromEnv(): ZnVaultClient {
+            val baseUrl = System.getenv(DEFAULT_URL_ENV) ?: DEFAULT_BASE_URL
+            return builder()
+                .baseUrl(baseUrl)
+                .apiKeyFromEnv(DEFAULT_API_KEY_ENV)
+                .build()
+        }
+
+        /**
+         * Create a client from custom environment variable names.
+         *
+         * @param urlEnvName Environment variable name for vault URL
+         * @param apiKeyEnvName Environment variable name for API key (checks _FILE suffix first)
+         * @return ZnVaultClient configured from environment
+         * @throws IllegalStateException if required environment variables are not set
+         */
+        @JvmStatic
+        fun fromEnv(urlEnvName: String, apiKeyEnvName: String): ZnVaultClient {
+            val baseUrl = System.getenv(urlEnvName)
+                ?: throw IllegalStateException("Environment variable $urlEnvName not set")
+            return builder()
+                .baseUrl(baseUrl)
+                .apiKeyFromEnv(apiKeyEnvName)
+                .build()
+        }
     }
 
     /**
@@ -188,6 +265,8 @@ class ZnVaultClient private constructor(
     class Builder {
         private var baseUrl: String = DEFAULT_BASE_URL
         private var apiKey: String? = null
+        private var apiKeyFilePath: String? = null
+        private var apiKeyEnvName: String? = null
         private var connectTimeout: Duration = Duration.ofSeconds(30)
         private var readTimeout: Duration = Duration.ofSeconds(30)
         private var writeTimeout: Duration = Duration.ofSeconds(30)
@@ -209,11 +288,46 @@ class ZnVaultClient private constructor(
          * Set API key for authentication.
          *
          * When set, the client will use API key authentication instead of JWT.
+         * For automatic key rotation support, use [apiKeyFile] or [apiKeyFromEnv] instead.
          *
          * @param key API key (e.g., "znv_xxxx_secretkey")
          */
         fun apiKey(key: String) = apply {
             this.apiKey = key
+            this.apiKeyFilePath = null
+            this.apiKeyEnvName = null
+        }
+
+        /**
+         * Set API key file path for authentication with automatic refresh.
+         *
+         * The API key will be read from the specified file. When a 401 error
+         * occurs, the file will be re-read and the request retried if the
+         * key has changed. This supports automatic key rotation by zn-vault-agent.
+         *
+         * @param filePath Path to file containing the API key
+         */
+        fun apiKeyFile(filePath: String) = apply {
+            this.apiKeyFilePath = filePath
+            this.apiKey = null
+            this.apiKeyEnvName = null
+        }
+
+        /**
+         * Configure API key from environment variables with automatic file detection.
+         *
+         * Checks for credentials in this order:
+         * 1. `{envName}_FILE` - Path to file containing API key (preferred)
+         * 2. `{envName}` - Direct API key value (fallback)
+         *
+         * When using file mode, supports automatic key rotation.
+         *
+         * @param envName Base environment variable name (e.g., "VAULT_API_KEY")
+         */
+        fun apiKeyFromEnv(envName: String) = apply {
+            this.apiKeyEnvName = envName
+            this.apiKey = null
+            this.apiKeyFilePath = null
         }
 
         /**
@@ -336,29 +450,37 @@ class ZnVaultClient private constructor(
 
             val httpClient = ZnVaultHttpClient(url, httpConfig)
 
-            // Set up authentication
-            val key = apiKey // Capture for smart cast
+            // Set up authentication based on configuration
+            val authProvider: AuthProvider? = when {
+                // Priority 1: Direct API key
+                apiKey != null -> ApiKeyAuth(apiKey!!)
+
+                // Priority 2: API key from file (with refresh support)
+                apiKeyFilePath != null -> FileApiKeyAuth(apiKeyFilePath!!)
+
+                // Priority 3: API key from environment (auto-detects file mode)
+                apiKeyEnvName != null -> FileApiKeyAuth.fromEnv(apiKeyEnvName!!)
+
+                // No API key configured - will use JWT
+                else -> null
+            }
+
             val tokenManager: TokenManager?
-            if (key != null) {
+            val effectiveApiKey: String?
+
+            if (authProvider != null) {
                 // Use API key authentication
                 tokenManager = null
-                httpClient.setAuthProvider(ApiKeyAuthProvider(key))
+                effectiveApiKey = authProvider.getApiKey()
+                httpClient.setAuthProvider(authProvider)
             } else {
                 // Use JWT token authentication
                 tokenManager = TokenManager(httpClient, tokenConfig)
+                effectiveApiKey = null
                 httpClient.setAuthProvider(tokenManager)
             }
 
-            return ZnVaultClient(httpClient, tokenManager, key)
+            return ZnVaultClient(httpClient, tokenManager, effectiveApiKey)
         }
     }
-}
-
-/**
- * Auth provider for API key authentication.
- * Uses the X-API-Key header as expected by ZN-Vault.
- */
-private class ApiKeyAuthProvider(private val apiKey: String) : com.zincware.vault.http.AuthProvider {
-    override fun getAuthHeader(): String? = null  // Not using Authorization header
-    override fun getApiKey(): String = apiKey     // Use X-API-Key header
 }

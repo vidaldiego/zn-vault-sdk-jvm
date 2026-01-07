@@ -399,11 +399,36 @@ interface AuthProvider {
 }
 
 /**
+ * Extended auth provider that supports credential refresh.
+ *
+ * Implement this interface when credentials may become stale and need
+ * to be reloaded (e.g., from a file that gets updated by an external process).
+ */
+interface RefreshableAuthProvider : AuthProvider {
+    /**
+     * Called when an authentication error (401) occurs.
+     *
+     * The provider should refresh its credentials from the source
+     * (e.g., re-read from file). Returns true if credentials were
+     * successfully refreshed and the request should be retried.
+     *
+     * @return true if credentials were refreshed and retry should occur
+     */
+    fun onAuthenticationError(): Boolean
+}
+
+/**
  * Interceptor that adds authentication headers.
+ *
+ * If the provider implements [RefreshableAuthProvider] and a 401 response
+ * is received, the interceptor will call [RefreshableAuthProvider.onAuthenticationError]
+ * and retry the request once with refreshed credentials.
  */
 private class AuthInterceptor(
     private val authProviderSupplier: () -> AuthProvider?
 ) : Interceptor {
+    private val logger = LoggerFactory.getLogger(AuthInterceptor::class.java)
+
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
         val provider = authProviderSupplier()
@@ -412,6 +437,36 @@ private class AuthInterceptor(
             return chain.proceed(request)
         }
 
+        // Build request with current credentials
+        val authenticatedRequest = addAuthHeaders(request, provider)
+        val response = chain.proceed(authenticatedRequest)
+
+        // Check for 401 and retry with refreshed credentials if supported
+        if (response.code == 401 && provider is RefreshableAuthProvider) {
+            logger.debug("Received 401, attempting credential refresh")
+
+            // Close the original response body before retrying
+            response.close()
+
+            // Try to refresh credentials
+            if (provider.onAuthenticationError()) {
+                logger.debug("Credentials refreshed, retrying request")
+
+                // Retry with refreshed credentials
+                val retryRequest = addAuthHeaders(request, provider)
+                return chain.proceed(retryRequest)
+            } else {
+                logger.debug("Credential refresh failed or not available")
+                // Re-execute the original request to get a fresh response
+                // (since we closed the previous one)
+                return chain.proceed(authenticatedRequest)
+            }
+        }
+
+        return response
+    }
+
+    private fun addAuthHeaders(request: Request, provider: AuthProvider): Request {
         val builder = request.newBuilder()
 
         // Add Authorization header (JWT)
@@ -424,7 +479,7 @@ private class AuthInterceptor(
             builder.header("X-API-Key", apiKey)
         }
 
-        return chain.proceed(builder.build())
+        return builder.build()
     }
 }
 
