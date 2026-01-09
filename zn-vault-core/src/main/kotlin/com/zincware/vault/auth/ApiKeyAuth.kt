@@ -160,12 +160,14 @@ class FileApiKeyAuth(
         /**
          * Create a FileApiKeyAuth from environment variable detection.
          *
-         * Checks for the file path in `{envName}_FILE` environment variable.
-         * For example, if envName is "VAULT_API_KEY", it checks for
-         * "VAULT_API_KEY_FILE" to get the file path.
+         * Checks for the file path in `{envName}_FILE` environment variable
+         * or system property. For example, if envName is "VAULT_API_KEY", it
+         * checks for "VAULT_API_KEY_FILE" to get the file path.
          *
          * Falls back to reading the direct value from `envName` if no file
          * is configured (returns a regular ApiKeyAuth in that case).
+         *
+         * Checks in order: env var, then system property (for Payara -D options).
          *
          * @param envName Base environment variable name
          * @return AuthProvider configured from environment
@@ -173,8 +175,11 @@ class FileApiKeyAuth(
          */
         @JvmStatic
         fun fromEnv(envName: String): AuthProvider {
+            // Check env vars first, then system properties (for Payara -D options)
             val filePath = System.getenv("${envName}_FILE")
+                ?: System.getProperty("${envName}_FILE")
             val directValue = System.getenv(envName)
+                ?: System.getProperty(envName)
 
             return when {
                 filePath != null -> {

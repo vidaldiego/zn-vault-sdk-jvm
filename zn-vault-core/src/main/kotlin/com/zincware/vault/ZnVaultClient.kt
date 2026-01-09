@@ -233,7 +233,10 @@ class ZnVaultClient private constructor(
          */
         @JvmStatic
         fun fromEnv(): ZnVaultClient {
-            val baseUrl = System.getenv(DEFAULT_URL_ENV) ?: DEFAULT_BASE_URL
+            // Check env var first, then system property (for Payara -D options)
+            val baseUrl = System.getenv(DEFAULT_URL_ENV)
+                ?: System.getProperty(DEFAULT_URL_ENV)
+                ?: DEFAULT_BASE_URL
             return builder()
                 .baseUrl(baseUrl)
                 .apiKeyFromEnv(DEFAULT_API_KEY_ENV)
@@ -250,8 +253,10 @@ class ZnVaultClient private constructor(
          */
         @JvmStatic
         fun fromEnv(urlEnvName: String, apiKeyEnvName: String): ZnVaultClient {
+            // Check env var first, then system property (for Payara -D options)
             val baseUrl = System.getenv(urlEnvName)
-                ?: throw IllegalStateException("Environment variable $urlEnvName not set")
+                ?: System.getProperty(urlEnvName)
+                ?: throw IllegalStateException("Environment variable or system property $urlEnvName not set")
             return builder()
                 .baseUrl(baseUrl)
                 .apiKeyFromEnv(apiKeyEnvName)
