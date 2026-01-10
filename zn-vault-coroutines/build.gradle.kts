@@ -21,7 +21,7 @@ dependencies {
 tasks.named<Jar>("jar") {
     manifest {
         attributes(
-            "Implementation-Title" to "ZN-Vault SDK Coroutines",
+            "Implementation-Title" to "ZnVault SDK Coroutines",
             "Implementation-Version" to project.version,
             "Implementation-Vendor" to "ZincWare"
         )

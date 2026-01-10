@@ -1,10 +1,10 @@
-# ZN-Vault SDK for Java/Kotlin
+# ZnVault SDK for Java/Kotlin
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.vidaldiego/zn-vault-core.svg)](https://central.sonatype.com/artifact/io.github.vidaldiego/zn-vault-core)
 [![Java 11+](https://img.shields.io/badge/Java-11+-blue.svg)](https://openjdk.java.net/)
 [![Kotlin 1.9+](https://img.shields.io/badge/Kotlin-1.9+-purple.svg)](https://kotlinlang.org/)
 
-Official Java/Kotlin client library for ZN-Vault secrets management.
+Official Java/Kotlin client library for ZnVault secrets management.
 
 **Maven Central:** https://central.sonatype.com/artifact/io.github.vidaldiego/zn-vault-core
 **GitHub:** https://github.com/vidaldiego/zn-vault-sdk-jvm
@@ -64,8 +64,8 @@ dependencies {
 ### Kotlin with API Key
 
 ```kotlin
-import com.zincware.vault.ZnVaultClient
-import com.zincware.vault.models.SecretType
+import com.zincapp.vault.ZnVaultClient
+import com.zincapp.vault.models.SecretType
 
 // Create client with API key (uses default URL: https://vault.zincapp.com)
 val client = ZnVaultClient.withApiKey("znv_xxxx_your_api_key")
@@ -96,8 +96,8 @@ println("Username: ${data.data["username"]}")
 ### Java with API Key
 
 ```java
-import com.zincware.vault.ZnVaultClient;
-import com.zincware.vault.models.*;
+import com.zincapp.vault.ZnVaultClient;
+import com.zincapp.vault.models.*;
 
 // Create client (uses default URL: https://vault.zincapp.com)
 ZnVaultClient client = ZnVaultClient.withApiKey("znv_xxxx_your_api_key");
@@ -209,7 +209,7 @@ val client = ZnVaultClient.builder()
 ### Kotlin Coroutines
 
 ```kotlin
-import com.zincware.vault.coroutines.async
+import com.zincapp.vault.coroutines.async
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.collect
 
@@ -236,7 +236,7 @@ runBlocking {
 ### Java CompletableFuture
 
 ```java
-import com.zincware.vault.async.SecretClientAsync;
+import com.zincapp.vault.async.SecretClientAsync;
 
 SecretClientAsync async = new SecretClientAsync(client.getSecrets());
 
@@ -425,7 +425,7 @@ val client = ZnVaultClient.builder()
 ### Mutual TLS (mTLS)
 
 ```kotlin
-import com.zincware.vault.http.TlsConfig
+import com.zincapp.vault.http.TlsConfig
 
 val tlsConfig = TlsConfig.builder()
     .caCertificate("/path/to/ca.pem")
@@ -454,7 +454,7 @@ val client = ZnVaultClient.builder()
 ## Error Handling
 
 ```kotlin
-import com.zincware.vault.exception.*
+import com.zincapp.vault.exception.*
 
 try {
     val secret = client.secrets.get("non-existent-id")
@@ -476,7 +476,7 @@ try {
 ## Configuration Options
 
 ```kotlin
-import com.zincware.vault.http.RetryPolicy
+import com.zincapp.vault.http.RetryPolicy
 import java.time.Duration
 
 val client = ZnVaultClient.builder()

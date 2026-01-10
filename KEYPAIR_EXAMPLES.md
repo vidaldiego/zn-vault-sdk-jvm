@@ -1,6 +1,6 @@
 # Keypair Generation and Public Key Publishing
 
-The ZN-Vault JVM SDK now supports cryptographic keypair generation and public key publishing.
+The ZnVault JVM SDK now supports cryptographic keypair generation and public key publishing.
 
 ## Features
 
@@ -87,8 +87,8 @@ data class PublishResult(
 #### Generate an Ed25519 Keypair
 
 ```kotlin
-import com.zincware.vault.ZnVaultClient
-import com.zincware.vault.models.*
+import com.zincapp.vault.ZnVaultClient
+import com.zincapp.vault.models.*
 
 val client = ZnVaultClient.builder()
     .baseUrl("https://vault.example.com:8443")
@@ -210,8 +210,8 @@ publicKeys.forEach { key ->
 #### Generate an Ed25519 Keypair
 
 ```java
-import com.zincware.vault.ZnVaultClient;
-import com.zincware.vault.models.*;
+import com.zincapp.vault.ZnVaultClient;
+import com.zincapp.vault.models.*;
 
 ZnVaultClient client = ZnVaultClient.builder()
     .baseUrl("https://vault.example.com:8443")
@@ -273,7 +273,7 @@ System.out.println("Algorithm: " + publicKey.getAlgorithm());
 ### Async Operations (Java CompletableFuture)
 
 ```java
-import com.zincware.vault.async.SecretClientAsync;
+import com.zincapp.vault.async.SecretClientAsync;
 
 SecretClientAsync async = new SecretClientAsync(client.getSecrets());
 

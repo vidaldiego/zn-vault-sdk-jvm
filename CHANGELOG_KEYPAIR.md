@@ -5,7 +5,7 @@
 
 ## Summary
 
-Added comprehensive support for cryptographic keypair generation and public key publishing to the ZN-Vault JVM/Kotlin SDK. This update enables server-side keypair generation for RSA, Ed25519, and ECDSA algorithms, with the ability to publish public keys for unauthenticated access.
+Added comprehensive support for cryptographic keypair generation and public key publishing to the ZnVault JVM/Kotlin SDK. This update enables server-side keypair generation for RSA, Ed25519, and ECDSA algorithms, with the ability to publish public keys for unauthenticated access.
 
 ## New Features
 
@@ -131,7 +131,7 @@ data class PublicKeysListResponse(
 
 ### Core Module (`zn-vault-core`)
 
-1. **`src/main/kotlin/com/zincware/vault/models/Secret.kt`**
+1. **`src/main/kotlin/com/zincapp/vault/models/Secret.kt`**
    - Added `KeypairAlgorithm` enum (RSA, Ed25519, ECDSA)
    - Added `EcdsaCurve` enum (P_256, P_384)
    - Added `GenerateKeypairRequest` data class
@@ -142,7 +142,7 @@ data class PublicKeysListResponse(
    - Updated `SecretSubType` enum with public key types (ED25519_PUBLIC_KEY, RSA_PUBLIC_KEY, ECDSA_PUBLIC_KEY)
    - Updated `subTypeToType` map to include new public key subtypes
 
-2. **`src/main/kotlin/com/zincware/vault/secrets/SecretClient.kt`**
+2. **`src/main/kotlin/com/zincapp/vault/secrets/SecretClient.kt`**
    - Added `generateKeypair(GenerateKeypairRequest): GeneratedKeypair` method
    - Added `generateKeypair(algorithm, alias, tenant, ...): GeneratedKeypair` overload
    - Added `publish(secretId: String): PublishResult` method
@@ -150,7 +150,7 @@ data class PublicKeysListResponse(
    - Added `getPublicKey(tenant: String, alias: String): PublicKeyInfo` method
    - Added `listPublicKeys(tenant: String): List<PublicKeyInfo>` method
 
-3. **`src/main/kotlin/com/zincware/vault/async/AsyncWrappers.kt`**
+3. **`src/main/kotlin/com/zincapp/vault/async/AsyncWrappers.kt`**
    - Added `generateKeypairAsync(GenerateKeypairRequest): CompletableFuture<GeneratedKeypair>`
    - Added `generateKeypairAsync(algorithm, alias, tenant, ...): CompletableFuture<GeneratedKeypair>`
    - Added `publishAsync(secretId: String): CompletableFuture<PublishResult>`
@@ -224,7 +224,7 @@ None. This is a backward-compatible addition to the SDK.
 
 ## Compatibility
 
-- **ZN-Vault Server:** Requires server version with keypair generation support (POST /v1/secrets/generate-keypair endpoint)
+- **ZnVault Server:** Requires server version with keypair generation support (POST /v1/secrets/generate-keypair endpoint)
 - **Java Version:** Java 11+
 - **Kotlin Version:** 1.9+
 
@@ -275,4 +275,4 @@ val keypair = client.secrets.generateKeypair(
 
 - **Author:** Claude (Anthropic)
 - **Date:** 2025-12-08
-- **SDK:** ZN-Vault JVM/Kotlin SDK
+- **SDK:** ZnVault JVM/Kotlin SDK

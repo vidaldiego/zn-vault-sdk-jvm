@@ -61,7 +61,7 @@ subprojects {
 
                 pom {
                     name.set(project.name)
-                    description.set("Java/Kotlin client library for ZN-Vault secrets management")
+                    description.set("Java/Kotlin client library for ZnVault secrets management")
                     url.set("https://github.com/vidaldiego/zn-vault-sdk-jvm")
 
                     licenses {
