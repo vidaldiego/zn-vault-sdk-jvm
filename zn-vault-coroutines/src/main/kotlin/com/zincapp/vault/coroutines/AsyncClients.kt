@@ -162,7 +162,7 @@ class AsyncKmsClient(private val sync: KmsClient) {
                 sync.listKeys(currentFilter)
             }
             response.items.forEach { emit(it) }
-            currentFilter = currentFilter.copy(marker = response.nextMarker)
+            currentFilter = currentFilter.copy(offset = currentFilter.offset + response.items.size)
         } while (response.hasMore)
     }
 
