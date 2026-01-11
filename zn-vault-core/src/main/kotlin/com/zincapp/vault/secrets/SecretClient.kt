@@ -497,52 +497,52 @@ class SecretClient internal constructor(
      * List secrets by sub-type.
      *
      * @param subType Sub-type to filter by
-     * @param page Page number
-     * @param pageSize Page size
+     * @param limit Maximum number of items to return
+     * @param offset Number of items to skip
      * @return List of secrets
      */
     fun listBySubType(
         subType: SecretSubType,
-        page: Int = 1,
-        pageSize: Int = 100
+        limit: Int = 50,
+        offset: Int = 0
     ): List<Secret> {
-        return list(SecretFilter(subType = subType, page = page, pageSize = pageSize))
+        return list(SecretFilter(subType = subType, limit = limit, offset = offset))
     }
 
     /**
      * List secrets by type.
      *
      * @param type Type to filter by
-     * @param page Page number
-     * @param pageSize Page size
+     * @param limit Maximum number of items to return
+     * @param offset Number of items to skip
      * @return List of secrets
      */
     fun listByType(
         type: SecretType,
-        page: Int = 1,
-        pageSize: Int = 100
+        limit: Int = 50,
+        offset: Int = 0
     ): List<Secret> {
-        return list(SecretFilter(type = type, page = page, pageSize = pageSize))
+        return list(SecretFilter(type = type, limit = limit, offset = offset))
     }
 
     /**
      * List certificates expiring before a specific date.
      *
      * @param beforeDate Cutoff date
-     * @param page Page number
-     * @param pageSize Page size
+     * @param limit Maximum number of items to return
+     * @param offset Number of items to skip
      * @return List of expiring certificates
      */
     fun listExpiringCertificates(
         beforeDate: Instant,
-        page: Int = 1,
-        pageSize: Int = 100
+        limit: Int = 50,
+        offset: Int = 0
     ): List<Secret> {
         return list(SecretFilter(
             subType = SecretSubType.CERTIFICATE,
             expiringBefore = beforeDate,
-            page = page,
-            pageSize = pageSize
+            limit = limit,
+            offset = offset
         ))
     }
 
@@ -550,19 +550,19 @@ class SecretClient internal constructor(
      * List all expiring secrets (certificates, tokens) before a specific date.
      *
      * @param beforeDate Cutoff date
-     * @param page Page number
-     * @param pageSize Page size
+     * @param limit Maximum number of items to return
+     * @param offset Number of items to skip
      * @return List of expiring secrets
      */
     fun listExpiring(
         beforeDate: Instant,
-        page: Int = 1,
-        pageSize: Int = 100
+        limit: Int = 50,
+        offset: Int = 0
     ): List<Secret> {
         return list(SecretFilter(
             expiringBefore = beforeDate,
-            page = page,
-            pageSize = pageSize
+            limit = limit,
+            offset = offset
         ))
     }
 
@@ -570,19 +570,19 @@ class SecretClient internal constructor(
      * List secrets by alias prefix (hierarchical path).
      *
      * @param aliasPrefix Alias prefix to filter by
-     * @param page Page number
-     * @param pageSize Page size
+     * @param limit Maximum number of items to return
+     * @param offset Number of items to skip
      * @return List of secrets
      */
     fun listByPath(
         aliasPrefix: String,
-        page: Int = 1,
-        pageSize: Int = 100
+        limit: Int = 50,
+        offset: Int = 0
     ): List<Secret> {
         return list(SecretFilter(
             aliasPrefix = aliasPrefix,
-            page = page,
-            pageSize = pageSize
+            limit = limit,
+            offset = offset
         ))
     }
 
@@ -838,8 +838,8 @@ class SecretClient internal constructor(
         filter.expiringBefore?.let { params.add("expiringBefore=${encode(it.toString())}") }
         filter.aliasPrefix?.let { params.add("aliasPrefix=${encode(it)}") }
         filter.tags?.forEach { params.add("tags=${encode(it)}") }
-        params.add("page=${filter.page}")
-        params.add("pageSize=${filter.pageSize}")
+        params.add("limit=${filter.limit}")
+        params.add("offset=${filter.offset}")
 
         return if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
     }

@@ -176,8 +176,8 @@ data class SecretFilter(
     val expiringBefore: Instant? = null,
     val aliasPrefix: String? = null,
     val tags: List<String>? = null,
-    val page: Int = 1,
-    val pageSize: Int = 100
+    val limit: Int = 50,
+    val offset: Int = 0
 )
 
 /**

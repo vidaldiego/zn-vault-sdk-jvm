@@ -23,17 +23,16 @@ data class AuditEntry(
 )
 
 /**
- * Page response for audit entries (uses 'entries' instead of 'data').
+ * Page response for audit entries.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class AuditPage(
     val entries: List<AuditEntry> = emptyList(),
-    val total: Int = 0,
-    val page: Int = 1,
-    val pageSize: Int = 50
+    val pagination: Pagination = Pagination()
 ) {
     val items: List<AuditEntry> get() = entries
-    val hasMore: Boolean get() = page * pageSize < total
+    val hasMore: Boolean get() = pagination.hasMore
+    val total: Int get() = pagination.total
 }
 
 /**

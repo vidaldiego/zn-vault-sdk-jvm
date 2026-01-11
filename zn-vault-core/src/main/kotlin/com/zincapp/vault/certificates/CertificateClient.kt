@@ -279,17 +279,17 @@ class CertificateClient internal constructor(
      *
      * @param clientId The client ID to filter by.
      * @param tenantId Optional tenant ID (required if not in JWT).
-     * @param page Page number.
-     * @param pageSize Page size.
+     * @param limit Maximum number of items to return.
+     * @param offset Number of items to skip.
      * @return Paginated list of certificates.
      */
     fun listByClient(
         clientId: String,
         tenantId: String? = null,
-        page: Int = 1,
-        pageSize: Int = 20
+        limit: Int = 50,
+        offset: Int = 0
     ): CertificateListResponse {
-        return list(CertificateFilter(clientId = clientId, page = page, pageSize = pageSize), tenantId)
+        return list(CertificateFilter(clientId = clientId, limit = limit, offset = offset), tenantId)
     }
 
     /**
@@ -297,49 +297,49 @@ class CertificateClient internal constructor(
      *
      * @param kind The kind to filter by.
      * @param tenantId Optional tenant ID (required if not in JWT).
-     * @param page Page number.
-     * @param pageSize Page size.
+     * @param limit Maximum number of items to return.
+     * @param offset Number of items to skip.
      * @return Paginated list of certificates.
      */
     fun listByKind(
         kind: String,
         tenantId: String? = null,
-        page: Int = 1,
-        pageSize: Int = 20
+        limit: Int = 50,
+        offset: Int = 0
     ): CertificateListResponse {
-        return list(CertificateFilter(kind = kind, page = page, pageSize = pageSize), tenantId)
+        return list(CertificateFilter(kind = kind, limit = limit, offset = offset), tenantId)
     }
 
     /**
      * List active certificates only.
      *
      * @param tenantId Optional tenant ID (required if not in JWT).
-     * @param page Page number.
-     * @param pageSize Page size.
+     * @param limit Maximum number of items to return.
+     * @param offset Number of items to skip.
      * @return Paginated list of active certificates.
      */
     fun listActive(
         tenantId: String? = null,
-        page: Int = 1,
-        pageSize: Int = 20
+        limit: Int = 50,
+        offset: Int = 0
     ): CertificateListResponse {
-        return list(CertificateFilter(status = CertificateStatus.ACTIVE, page = page, pageSize = pageSize), tenantId)
+        return list(CertificateFilter(status = CertificateStatus.ACTIVE, limit = limit, offset = offset), tenantId)
     }
 
     /**
      * List expired certificates only.
      *
      * @param tenantId Optional tenant ID (required if not in JWT).
-     * @param page Page number.
-     * @param pageSize Page size.
+     * @param limit Maximum number of items to return.
+     * @param offset Number of items to skip.
      * @return Paginated list of expired certificates.
      */
     fun listExpired(
         tenantId: String? = null,
-        page: Int = 1,
-        pageSize: Int = 20
+        limit: Int = 50,
+        offset: Int = 0
     ): CertificateListResponse {
-        return list(CertificateFilter(status = CertificateStatus.EXPIRED, page = page, pageSize = pageSize), tenantId)
+        return list(CertificateFilter(status = CertificateStatus.EXPIRED, limit = limit, offset = offset), tenantId)
     }
 
     /**
@@ -365,8 +365,8 @@ class CertificateClient internal constructor(
         filter.status?.let { params.add("status=${it.name}") }
         filter.expiringBefore?.let { params.add("expiringBefore=${encode(it.toString())}") }
         filter.tags?.forEach { params.add("tags=${encode(it)}") }
-        params.add("page=${filter.page}")
-        params.add("pageSize=${filter.pageSize}")
+        params.add("limit=${filter.limit}")
+        params.add("offset=${filter.offset}")
         tenantId?.let { params.add("tenantId=$it") }
 
         return if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""

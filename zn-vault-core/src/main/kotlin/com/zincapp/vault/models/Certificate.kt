@@ -144,8 +144,8 @@ data class CertificateFilter(
     val status: CertificateStatus? = null,
     val expiringBefore: Instant? = null,
     val tags: List<String>? = null,
-    val page: Int = 1,
-    val pageSize: Int = 20
+    val limit: Int = 50,
+    val offset: Int = 0
 )
 
 /**
@@ -185,10 +185,11 @@ data class CertificateAccessLogEntry(
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class CertificateListResponse(
     val items: List<Certificate> = emptyList(),
-    val total: Int = 0,
-    val page: Int = 1,
-    val pageSize: Int = 20
-)
+    val pagination: Pagination = Pagination()
+) {
+    val hasMore: Boolean get() = pagination.hasMore
+    val total: Int get() = pagination.total
+}
 
 /**
  * Certificate access log response.

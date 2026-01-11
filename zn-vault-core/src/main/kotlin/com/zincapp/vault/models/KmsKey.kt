@@ -39,16 +39,15 @@ data class KeyMetadataResponse(
 )
 
 /**
- * Page response for KMS keys (uses 'keys' instead of 'data').
+ * Paginated response for KMS keys.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class KeyListResponse(
-    val keys: List<KmsKey> = emptyList(),
-    val truncated: Boolean = false,
-    val nextMarker: String? = null
+    val items: List<KmsKey> = emptyList(),
+    val pagination: Pagination = Pagination()
 ) {
-    val items: List<KmsKey> get() = keys
-    val hasMore: Boolean get() = truncated
+    val hasMore: Boolean get() = pagination.hasMore
+    val total: Int get() = pagination.total
 }
 
 /**
@@ -121,7 +120,7 @@ data class KeyFilter(
     val usage: KeyUsage? = null,
     val state: KeyState? = null,
     val limit: Int = 50,
-    val marker: String? = null
+    val offset: Int = 0
 )
 
 /**

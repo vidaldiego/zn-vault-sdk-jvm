@@ -5,27 +5,49 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
+ * Pagination metadata included in paginated responses.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class Pagination(
+    val total: Int = 0,
+    val limit: Int = 50,
+    val offset: Int = 0,
+    val hasMore: Boolean = false
+)
+
+/**
  * Generic paginated response.
- * Note: API uses "data" field for items array.
+ * New standardized format with items array and pagination metadata.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class Page<T>(
-    @JsonProperty("data") val items: List<T> = emptyList(),
-    val page: Int = 1,
-    val pageSize: Int = 50,
-    val total: Int = 0,
-    val count: Int = 0,  // Some endpoints use "count" instead of "total"
-    @JsonProperty("next_marker") val nextMarker: String? = null,
-    val truncated: Boolean = false
+    val items: List<T> = emptyList(),
+    val pagination: Pagination = Pagination()
 ) {
-    val hasMore: Boolean get() = nextMarker != null || truncated
+    /**
+     * Whether more items exist beyond this page.
+     */
+    val hasMore: Boolean get() = pagination.hasMore
 
     /**
-     * Total number of items. Uses 'total' field if present, otherwise falls back to 'count'.
+     * Total number of items matching the query.
      */
-    val totalItems: Int get() = if (total > 0) total else count
+    val total: Int get() = pagination.total
 
-    val totalPages: Int get() = if (pageSize > 0) (totalItems + pageSize - 1) / pageSize else 0
+    /**
+     * Number of items per page.
+     */
+    val limit: Int get() = pagination.limit
+
+    /**
+     * Current offset position.
+     */
+    val offset: Int get() = pagination.offset
+
+    /**
+     * Calculate total pages based on limit.
+     */
+    val totalPages: Int get() = if (pagination.limit > 0) (pagination.total + pagination.limit - 1) / pagination.limit else 0
 }
 
 /**

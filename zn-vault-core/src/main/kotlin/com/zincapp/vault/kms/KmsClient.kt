@@ -407,7 +407,7 @@ class KmsClient internal constructor(
         filter.usage?.let { params.add("usage=${it.name}") }
         filter.state?.let { params.add("state=${it.name}") }
         params.add("limit=${filter.limit}")
-        filter.marker?.let { params.add("marker=${encode(it)}") }
+        params.add("offset=${filter.offset}")
 
         return if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
     }
