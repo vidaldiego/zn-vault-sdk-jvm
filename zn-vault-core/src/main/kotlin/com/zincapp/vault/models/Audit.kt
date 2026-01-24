@@ -27,10 +27,9 @@ data class AuditEntry(
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class AuditPage(
-    val entries: List<AuditEntry> = emptyList(),
+    val items: List<AuditEntry> = emptyList(),
     val pagination: Pagination = Pagination()
 ) {
-    val items: List<AuditEntry> get() = entries
     val hasMore: Boolean get() = pagination.hasMore
     val total: Int get() = pagination.total
 }

@@ -454,8 +454,8 @@ class AsyncAuditClient(private val sync: AuditClient) {
             val response = withContext(Dispatchers.IO) {
                 sync.list(currentFilter)
             }
-            response.entries.forEach { emit(it) }
-            currentFilter = currentFilter.copy(offset = currentFilter.offset + response.entries.size)
+            response.items.forEach { emit(it) }
+            currentFilter = currentFilter.copy(offset = currentFilter.offset + response.items.size)
         } while (response.hasMore)
     }
 

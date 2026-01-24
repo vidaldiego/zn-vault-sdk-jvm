@@ -177,7 +177,8 @@ data class RotateApiKeyResponse(
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class ApiKeyListResponse(
-    val keys: List<ApiKey> = emptyList(),
+    val items: List<ApiKey> = emptyList(),
+    val pagination: Pagination = Pagination(),
     val expiringSoon: List<ApiKey> = emptyList()
 )
 

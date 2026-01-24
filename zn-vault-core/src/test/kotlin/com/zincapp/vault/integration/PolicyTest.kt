@@ -164,7 +164,7 @@ class PolicyTest : BaseIntegrationTest() {
         )
 
         assertTrue(page.items.isNotEmpty())
-        println("✓ Listed ${page.items.size} policies (total: ${page.totalItems})")
+        println("✓ Listed ${page.items.size} policies (total: ${page.total})")
     }
 
     @Test

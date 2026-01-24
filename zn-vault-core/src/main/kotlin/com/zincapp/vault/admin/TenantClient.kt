@@ -21,9 +21,7 @@ class TenantClient internal constructor(
      * @return Created tenant
      */
     fun create(request: CreateTenantRequest): Tenant {
-        val response = httpClient.post("/v1/tenants", request,
-            object : TypeReference<ApiResponse<Tenant>>() {})
-        return response.data ?: throw IllegalStateException("No tenant data in response")
+        return httpClient.post("/v1/tenants", request, Tenant::class.java)
     }
 
     /**
@@ -44,9 +42,7 @@ class TenantClient internal constructor(
      * @return Tenant details
      */
     fun get(id: String): Tenant {
-        val response = httpClient.get("/v1/tenants/$id",
-            object : TypeReference<ApiResponse<Tenant>>() {})
-        return response.data ?: throw IllegalStateException("No tenant data in response")
+        return httpClient.get("/v1/tenants/$id", Tenant::class.java)
     }
 
     /**
@@ -69,9 +65,7 @@ class TenantClient internal constructor(
      * @return Updated tenant
      */
     fun update(id: String, request: UpdateTenantRequest): Tenant {
-        val response = httpClient.patch("/v1/tenants/$id", request,
-            object : TypeReference<ApiResponse<Tenant>>() {})
-        return response.data ?: throw IllegalStateException("No tenant data in response")
+        return httpClient.patch("/v1/tenants/$id", request, Tenant::class.java)
     }
 
     /**

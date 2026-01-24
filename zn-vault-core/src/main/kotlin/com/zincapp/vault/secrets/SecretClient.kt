@@ -173,8 +173,9 @@ class SecretClient internal constructor(
      */
     fun list(filter: SecretFilter = SecretFilter()): List<Secret> {
         val params = buildQueryParams(filter)
-        return httpClient.get("/v1/secrets$params",
-            object : TypeReference<List<Secret>>() {})
+        val page = httpClient.get("/v1/secrets$params",
+            object : TypeReference<Page<Secret>>() {})
+        return page.items
     }
 
     /**
@@ -193,8 +194,9 @@ class SecretClient internal constructor(
      * @return List of secret versions
      */
     fun getHistory(id: String): List<SecretVersion> {
-        val response = httpClient.get("/v1/secrets/$id/history", SecretHistoryResponse::class.java)
-        return response.history
+        val page = httpClient.get("/v1/secrets/$id/history",
+            object : TypeReference<Page<SecretVersion>>() {})
+        return page.items
     }
 
     /**

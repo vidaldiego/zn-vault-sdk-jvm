@@ -103,7 +103,7 @@ class TenantTest : BaseIntegrationTest() {
         )
 
         assertTrue(page.items.isNotEmpty())
-        println("✓ Listed ${page.items.size} tenants (total: ${page.totalItems})")
+        println("✓ Listed ${page.items.size} tenants (total: ${page.total})")
     }
 
     // ==================== Update Tenant Tests ====================

@@ -384,7 +384,7 @@ class SecretsTest : BaseIntegrationTest() {
         // List with filter
         val secrets = client.secrets.list(
             SecretFilter(
-                pageSize = 10
+                limit = 10
             )
         )
 

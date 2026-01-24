@@ -128,7 +128,7 @@ class AuthClient internal constructor(
      */
     fun listApiKeys(): List<ApiKey> {
         val response = httpClient.get("/auth/api-keys", ApiKeyListResponse::class.java)
-        return response.keys
+        return response.items
     }
 
     /**
