@@ -48,17 +48,14 @@ class ZnVaultAsyncClient(private val sync: ZnVaultClient) {
     /** Async KMS operations */
     val kms = AsyncKmsClient(sync.kms)
 
-    /** Async tenant operations */
-    val tenants = AsyncTenantClient(sync.admin.tenants)
+    /** Async user operations (tenant-scoped) */
+    val users = AsyncUserClient(sync.users)
 
-    /** Async user operations */
-    val users = AsyncUserClient(sync.admin.users)
+    /** Async role operations (tenant-scoped) */
+    val roles = AsyncRoleClient(sync.roles)
 
-    /** Async role operations */
-    val roles = AsyncRoleClient(sync.admin.roles)
-
-    /** Async policy operations */
-    val policies = AsyncPolicyClient(sync.admin.policies)
+    /** Async policy operations (tenant-scoped) */
+    val policies = AsyncPolicyClient(sync.policies)
 
     /** Async audit operations */
     val audit = AsyncAuditClient(sync.audit)

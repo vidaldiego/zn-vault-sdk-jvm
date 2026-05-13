@@ -44,27 +44,25 @@ enum class UserStatus {
 }
 
 /**
- * Request to create a new user.
- * Note: API expects camelCase for request fields.
+ * Request to create a new user. Tenant is derived from the authenticated
+ * principal by the server; there is no client-supplied tenantId field.
+ * For cross-tenant user creation, use ZnVaultSuperadminClient.
  */
 data class CreateUserRequest(
     val username: String,
     val password: String,
     val email: String? = null,
     val role: UserRole = UserRole.USER,
-    val tenantId: String? = null,
     val roles: List<String> = emptyList()
 )
 
 /**
- * Request to update an existing user.
- * Note: API expects camelCase for request fields, null fields excluded.
+ * Request to update an existing user. The user's tenant cannot be changed.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class UpdateUserRequest(
     val email: String? = null,
     val role: UserRole? = null,
-    val tenantId: String? = null,
     val status: UserStatus? = null,
     val roles: List<String>? = null
 )
@@ -80,7 +78,6 @@ data class ResetPasswordRequest(
  * Filter for listing users.
  */
 data class UserFilter(
-    val tenant: String? = null,
     val role: UserRole? = null,
     val status: UserStatus? = null,
     val limit: Int = 50,

@@ -23,26 +23,24 @@ class UserClient internal constructor(
     }
 
     /**
-     * Create a new user with simplified parameters.
+     * Create a new user in the caller's tenant. Tenant is derived from the
+     * authenticated principal by the server.
      *
      * @param username Username
      * @param password Password
      * @param email Optional email
-     * @param tenantId Optional tenant ID
      * @return Created user
      */
     fun create(
         username: String,
         password: String,
-        email: String? = null,
-        tenantId: String? = null
+        email: String? = null
     ): User {
         return create(
             CreateUserRequest(
                 username = username,
                 password = password,
-                email = email,
-                tenantId = tenantId
+                email = email
             )
         )
     }
@@ -166,7 +164,6 @@ class UserClient internal constructor(
     private fun buildFilterParams(filter: UserFilter): String {
         val params = mutableListOf<String>()
 
-        filter.tenant?.let { params.add("tenant=$it") }
         filter.role?.let { params.add("role=${it.name.lowercase()}") }
         filter.status?.let { params.add("status=${it.name.lowercase()}") }
         params.add("limit=${filter.limit}")

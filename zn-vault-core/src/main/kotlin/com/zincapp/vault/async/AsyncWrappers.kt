@@ -260,14 +260,13 @@ class SecretClientAsync @JvmOverloads constructor(
     fun generateKeypairAsync(
         algorithm: KeypairAlgorithm,
         alias: String,
-        tenant: String,
         rsaBits: Int? = null,
         ecdsaCurve: EcdsaCurve? = null,
         comment: String? = null,
         publishPublicKey: Boolean? = null,
         tags: List<String> = emptyList()
     ): CompletableFuture<GeneratedKeypair> =
-        CompletableFuture.supplyAsync({ sync.generateKeypair(algorithm, alias, tenant, rsaBits, ecdsaCurve, comment, publishPublicKey, tags) }, executor)
+        CompletableFuture.supplyAsync({ sync.generateKeypair(algorithm, alias, rsaBits, ecdsaCurve, comment, publishPublicKey, tags) }, executor)
 
     fun publishAsync(secretId: String): CompletableFuture<PublishResult> =
         CompletableFuture.supplyAsync({ sync.publish(secretId) }, executor)
@@ -294,11 +293,10 @@ class KmsClientAsync @JvmOverloads constructor(
         CompletableFuture.supplyAsync({ sync.createKey(request) }, executor)
 
     fun createKeyAsync(
-        tenant: String,
         alias: String? = null,
         description: String? = null
     ): CompletableFuture<KmsKey> =
-        CompletableFuture.supplyAsync({ sync.createKey(tenant, alias, description) }, executor)
+        CompletableFuture.supplyAsync({ sync.createKey(alias, description) }, executor)
 
     fun getKeyAsync(keyId: String): CompletableFuture<KmsKey> =
         CompletableFuture.supplyAsync({ sync.getKey(keyId) }, executor)
@@ -404,10 +402,9 @@ class UserClientAsync @JvmOverloads constructor(
     fun createAsync(
         username: String,
         password: String,
-        email: String? = null,
-        tenantId: String? = null
+        email: String? = null
     ): CompletableFuture<User> =
-        CompletableFuture.supplyAsync({ sync.create(username, password, email, tenantId) }, executor)
+        CompletableFuture.supplyAsync({ sync.create(username, password, email) }, executor)
 
     fun getAsync(id: String): CompletableFuture<User> =
         CompletableFuture.supplyAsync({ sync.get(id) }, executor)

@@ -1,6 +1,7 @@
 // Path: zn-vault-core/src/test/kotlin/com/zincapp/vault/integration/TenantTest.kt
 package com.zincapp.vault.integration
 
+import com.zincapp.vault.ZnVaultSuperadminClient
 import com.zincapp.vault.exception.NotFoundException
 import com.zincapp.vault.models.*
 import org.junit.jupiter.api.*
@@ -8,11 +9,24 @@ import org.junit.jupiter.api.Assertions.*
 
 /**
  * Integration tests for tenant management functionality.
+ *
+ * Tenant CRUD is superadmin-only, so this test uses [ZnVaultSuperadminClient]
+ * rather than the tenant-scoped [com.zincapp.vault.ZnVaultClient].
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class TenantTest : BaseIntegrationTest() {
 
     private val createdTenantIds = mutableListOf<String>()
+    private lateinit var admin: ZnVaultSuperadminClient
+
+    @BeforeEach
+    fun setUpAdmin() {
+        admin = ZnVaultSuperadminClient.builder()
+            .baseUrl(TestConfig.BASE_URL)
+            .insecureTls()
+            .build()
+        admin.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
+    }
 
     override fun cleanup() {
         // Tenants are typically not deleted in tests to avoid issues
@@ -27,7 +41,7 @@ class TenantTest : BaseIntegrationTest() {
     fun testCreateTenant() {
         val tenantId = "test-tenant-${testId}"
 
-        val tenant = client.admin.tenants.create(
+        val tenant = admin.tenants.create(
             CreateTenantRequest(
                 id = tenantId,
                 name = "Test Tenant $testId"
@@ -50,7 +64,7 @@ class TenantTest : BaseIntegrationTest() {
     fun testCreateTenantSimplified() {
         val tenantId = "simple-tenant-${testId}"
 
-        val tenant = client.admin.tenants.create(
+        val tenant = admin.tenants.create(
             id = tenantId,
             name = "Simple Tenant"
         )
@@ -70,10 +84,10 @@ class TenantTest : BaseIntegrationTest() {
     @DisplayName("Get tenant by ID")
     fun testGetTenant() {
         val tenantId = "get-test-${testId}"
-        val created = client.admin.tenants.create(tenantId, "Get Test Tenant")
+        val created = admin.tenants.create(tenantId, "Get Test Tenant")
         createdTenantIds.add(created.id)
 
-        val tenant = client.admin.tenants.get(tenantId)
+        val tenant = admin.tenants.get(tenantId)
 
         assertEquals(tenantId, tenant.id)
         assertEquals("Get Test Tenant", tenant.name)
@@ -86,7 +100,7 @@ class TenantTest : BaseIntegrationTest() {
     @DisplayName("Get non-existent tenant returns 404")
     fun testGetNonExistentTenant() {
         assertThrows<NotFoundException> {
-            client.admin.tenants.get("non-existent-tenant-12345")
+            admin.tenants.get("non-existent-tenant-12345")
         }
 
         println("✓ Non-existent tenant correctly returns 404")
@@ -98,7 +112,7 @@ class TenantTest : BaseIntegrationTest() {
     @Order(20)
     @DisplayName("List tenants with pagination")
     fun testListTenants() {
-        val page = client.admin.tenants.list(
+        val page = admin.tenants.list(
             TenantFilter(limit = 10)
         )
 
@@ -113,13 +127,13 @@ class TenantTest : BaseIntegrationTest() {
     @DisplayName("Update tenant name")
     fun testUpdateTenant() {
         val tenantId = "update-test-${testId}"
-        val created = client.admin.tenants.create(
+        val created = admin.tenants.create(
             id = tenantId,
             name = "Original Name"
         )
         createdTenantIds.add(created.id)
 
-        val updated = client.admin.tenants.update(
+        val updated = admin.tenants.update(
             id = tenantId,
             request = UpdateTenantRequest(
                 name = "Updated Name"
@@ -136,16 +150,16 @@ class TenantTest : BaseIntegrationTest() {
     @DisplayName("Suspend and activate tenant")
     fun testSuspendActivateTenant() {
         val tenantId = "suspend-test-${testId}"
-        val created = client.admin.tenants.create(tenantId, "Suspend Test")
+        val created = admin.tenants.create(tenantId, "Suspend Test")
         createdTenantIds.add(created.id)
 
         // Suspend
-        val suspended = client.admin.tenants.suspend(tenantId)
+        val suspended = admin.tenants.suspend(tenantId)
         assertEquals(TenantStatus.SUSPENDED, suspended.status)
         println("✓ Suspended tenant")
 
         // Activate
-        val activated = client.admin.tenants.activate(tenantId)
+        val activated = admin.tenants.activate(tenantId)
         assertEquals(TenantStatus.ACTIVE, activated.status)
         println("✓ Re-activated tenant")
     }

@@ -98,7 +98,8 @@ data class KeyTag(
 )
 
 /**
- * Request to create a new KMS key.
+ * Request to create a new KMS key. Tenant is always derived from the
+ * authenticated principal — there is no client-supplied tenant field.
  */
 data class CreateKeyRequest(
     val alias: String? = null,
@@ -107,15 +108,14 @@ data class CreateKeyRequest(
     @JsonProperty("key_spec") val keySpec: KeySpec = KeySpec.AES_256,
     val origin: KeyOrigin = KeyOrigin.ZN_VAULT,
     @JsonProperty("multi_region") val multiRegion: Boolean = false,
-    val tags: List<KeyTag> = emptyList(),
-    val tenant: String
+    val tags: List<KeyTag> = emptyList()
 )
 
 /**
- * Filter for listing KMS keys.
+ * Filter for listing KMS keys. The list is always scoped to the caller's
+ * tenant by the server; there is no client-supplied tenant filter.
  */
 data class KeyFilter(
-    val tenant: String? = null,
     val alias: String? = null,
     val usage: KeyUsage? = null,
     val state: KeyState? = null,

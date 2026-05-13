@@ -28,23 +28,21 @@ class KmsClient internal constructor(
     }
 
     /**
-     * Create a new AES-256 encryption key.
+     * Create a new AES-256 encryption key in the caller's tenant. The tenant
+     * is derived from the authenticated principal by the server.
      *
-     * @param tenant Tenant ID
      * @param alias Optional alias
      * @param description Optional description
      * @return Created key
      */
     fun createKey(
-        tenant: String,
         alias: String? = null,
         description: String? = null
     ): KmsKey {
         return createKey(
             CreateKeyRequest(
                 alias = alias,
-                description = description,
-                tenant = tenant
+                description = description
             )
         )
     }
@@ -402,7 +400,6 @@ class KmsClient internal constructor(
     private fun buildKeyFilterParams(filter: KeyFilter): String {
         val params = mutableListOf<String>()
 
-        filter.tenant?.let { params.add("tenant=${encode(it)}") }
         filter.alias?.let { params.add("alias=${encode(it)}") }
         filter.usage?.let { params.add("usage=${it.name}") }
         filter.state?.let { params.add("state=${it.name}") }

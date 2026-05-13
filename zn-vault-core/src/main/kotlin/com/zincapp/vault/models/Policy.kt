@@ -58,8 +58,7 @@ data class CreatePolicyRequest(
     val resources: List<String>,
     val actions: List<String>,
     val conditions: PolicyConditions? = null,
-    val priority: Int = 0,
-    val tenantId: String? = null
+    val priority: Int = 0
 )
 
 /**
@@ -105,7 +104,6 @@ enum class PrincipalType {
  * Filter for listing policies.
  */
 data class PolicyFilter(
-    val tenantId: String? = null,
     val enabled: Boolean? = null,
     val effect: PolicyEffect? = null,
     val limit: Int = 50,

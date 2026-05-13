@@ -23,21 +23,20 @@ class RoleClient internal constructor(
     }
 
     /**
-     * Create a new custom role with simplified parameters.
+     * Create a new custom role in the caller's tenant. Tenant is derived
+     * from the authenticated principal by the server.
      *
      * @param name Role name
      * @param permissions List of permissions
      * @param description Optional description
-     * @param tenantId Optional tenant ID
      * @return Created role
      */
     fun create(
         name: String,
         permissions: List<String>,
-        description: String? = null,
-        tenantId: String? = null
+        description: String? = null
     ): Role {
-        return create(CreateRoleRequest(name, description, permissions, tenantId))
+        return create(CreateRoleRequest(name, description, permissions))
     }
 
     /**
@@ -145,7 +144,6 @@ class RoleClient internal constructor(
     private fun buildFilterParams(filter: RoleFilter): String {
         val params = mutableListOf<String>()
 
-        filter.tenantId?.let { params.add("tenantId=$it") }
         if (filter.includeSystem) params.add("includeSystem=true")
         params.add("limit=${filter.limit}")
         params.add("offset=${filter.offset}")

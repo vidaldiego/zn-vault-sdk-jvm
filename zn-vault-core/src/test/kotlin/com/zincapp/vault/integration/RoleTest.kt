@@ -18,7 +18,7 @@ class RoleTest : BaseIntegrationTest() {
         // Clean up created roles
         createdRoleIds.forEach { id ->
             try {
-                client.admin.roles.delete(id)
+                client.roles.delete(id)
                 println("  Cleaned up role: $id")
             } catch (e: Exception) {
                 // Ignore cleanup errors
@@ -35,11 +35,10 @@ class RoleTest : BaseIntegrationTest() {
     fun testCreateRole() {
         val roleName = "custom-role-${testId}"
 
-        val role = client.admin.roles.create(
+        val role = client.roles.create(
             CreateRoleRequest(
                 name = roleName,
                 description = "Custom role for SDK testing",
-                tenantId = TestConfig.DEFAULT_TENANT,
                 permissions = listOf(
                     "secret:read:metadata",
                     "secret:read:value",
@@ -66,10 +65,9 @@ class RoleTest : BaseIntegrationTest() {
     fun testCreateRoleSimplified() {
         val roleName = "simple-role-${testId}"
 
-        val role = client.admin.roles.create(
+        val role = client.roles.create(
             name = roleName,
             description = "Simple role",
-            tenantId = TestConfig.DEFAULT_TENANT,
             permissions = listOf("secret:list")
         )
 
@@ -88,15 +86,14 @@ class RoleTest : BaseIntegrationTest() {
     @DisplayName("Get role by ID")
     fun testGetRole() {
         val roleName = "get-role-${testId}"
-        val created = client.admin.roles.create(
+        val created = client.roles.create(
             name = roleName,
             description = "Get test role",
-            tenantId = TestConfig.DEFAULT_TENANT,
             permissions = listOf("secret:list")
         )
         createdRoleIds.add(created.id)
 
-        val role = client.admin.roles.get(created.id)
+        val role = client.roles.get(created.id)
 
         assertEquals(created.id, role.id)
         assertEquals(roleName, role.name)
@@ -109,7 +106,7 @@ class RoleTest : BaseIntegrationTest() {
     @DisplayName("Get non-existent role returns 404")
     fun testGetNonExistentRole() {
         assertThrows<NotFoundException> {
-            client.admin.roles.get("non-existent-role-id-12345")
+            client.roles.get("non-existent-role-id-12345")
         }
 
         println("✓ Non-existent role correctly returns 404")
@@ -123,18 +120,16 @@ class RoleTest : BaseIntegrationTest() {
     fun testListRoles() {
         // Create a few roles
         repeat(2) { i ->
-            val role = client.admin.roles.create(
+            val role = client.roles.create(
                 name = "list-role-$i-${testId}",
                 description = "List test role $i",
-                tenantId = TestConfig.DEFAULT_TENANT,
                 permissions = listOf("secret:list")
             )
             createdRoleIds.add(role.id)
         }
 
-        val page = client.admin.roles.list(
+        val page = client.roles.list(
             RoleFilter(
-                tenantId = TestConfig.DEFAULT_TENANT,
                 limit = 20
             )
         )
@@ -150,15 +145,14 @@ class RoleTest : BaseIntegrationTest() {
     @DisplayName("Update role")
     fun testUpdateRole() {
         val roleName = "update-role-${testId}"
-        val created = client.admin.roles.create(
+        val created = client.roles.create(
             name = roleName,
             description = "Original description",
-            tenantId = TestConfig.DEFAULT_TENANT,
             permissions = listOf("secret:list")
         )
         createdRoleIds.add(created.id)
 
-        val updated = client.admin.roles.update(
+        val updated = client.roles.update(
             id = created.id,
             request = UpdateRoleRequest(description = "Updated description")
         )
@@ -175,21 +169,20 @@ class RoleTest : BaseIntegrationTest() {
     @DisplayName("Delete a custom role")
     fun testDeleteRole() {
         val roleName = "delete-role-${testId}"
-        val created = client.admin.roles.create(
+        val created = client.roles.create(
             name = roleName,
             description = "Delete test role",
-            tenantId = TestConfig.DEFAULT_TENANT,
             permissions = listOf("secret:list")
         )
 
         // Delete it
         assertDoesNotThrow {
-            client.admin.roles.delete(created.id)
+            client.roles.delete(created.id)
         }
 
         // Verify it's gone
         assertThrows<NotFoundException> {
-            client.admin.roles.get(created.id)
+            client.roles.get(created.id)
         }
 
         println("✓ Deleted role: $roleName")

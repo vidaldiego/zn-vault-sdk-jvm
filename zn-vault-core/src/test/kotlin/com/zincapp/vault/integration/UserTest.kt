@@ -18,7 +18,7 @@ class UserTest : BaseIntegrationTest() {
         // Clean up created users
         createdUserIds.forEach { id ->
             try {
-                client.admin.users.delete(id)
+                client.users.delete(id)
                 println("  Cleaned up user: $id")
             } catch (e: Exception) {
                 // Ignore cleanup errors
@@ -35,12 +35,11 @@ class UserTest : BaseIntegrationTest() {
     fun testCreateUser() {
         val username = "testuser-${testId}"
 
-        val user = client.admin.users.create(
+        val user = client.users.create(
             CreateUserRequest(
                 username = username,
                 email = "$username@example.com",
                 password = "TestPassword123#",
-                tenantId = TestConfig.DEFAULT_TENANT
             )
         )
 
@@ -64,12 +63,10 @@ class UserTest : BaseIntegrationTest() {
     fun testCreateUserSimplified() {
         val username = "simpleuser-${testId}"
 
-        val user = client.admin.users.create(
+        val user = client.users.create(
             username = username,
             email = "$username@example.com",
-            password = "SimplePass123#",
-            tenantId = TestConfig.DEFAULT_TENANT
-        )
+            password = "SimplePass123#"        )
 
         createdUserIds.add(user.id)
 
@@ -88,15 +85,13 @@ class UserTest : BaseIntegrationTest() {
     @DisplayName("Get user by ID")
     fun testGetUser() {
         val username = "getuser-${testId}"
-        val created = client.admin.users.create(
+        val created = client.users.create(
             username = username,
             email = "$username@example.com",
-            password = "GetPassword123#",
-            tenantId = TestConfig.DEFAULT_TENANT
-        )
+            password = "GetPassword123#"        )
         createdUserIds.add(created.id)
 
-        val user = client.admin.users.get(created.id)
+        val user = client.users.get(created.id)
 
         assertEquals(created.id, user.id)
         // Server returns username with tenant prefix
@@ -111,7 +106,7 @@ class UserTest : BaseIntegrationTest() {
     @DisplayName("Get non-existent user returns 404")
     fun testGetNonExistentUser() {
         assertThrows<NotFoundException> {
-            client.admin.users.get("non-existent-user-id-12345")
+            client.users.get("non-existent-user-id-12345")
         }
 
         println("✓ Non-existent user correctly returns 404")
@@ -126,20 +121,16 @@ class UserTest : BaseIntegrationTest() {
         // Create a few users
         repeat(2) { i ->
             val username = "listuser-$i-${testId}"
-            val user = client.admin.users.create(
+            val user = client.users.create(
                 username = username,
                 email = "$username@example.com",
                 password = "ListPassword123#$i",
-                tenantId = TestConfig.DEFAULT_TENANT
             )
             createdUserIds.add(user.id)
         }
 
-        val page = client.admin.users.list(
-            UserFilter(
-                tenant = TestConfig.DEFAULT_TENANT,
-                limit = 10
-            )
+        val page = client.users.list(
+            UserFilter(limit = 10)
         )
 
         assertTrue(page.items.isNotEmpty())
@@ -153,15 +144,13 @@ class UserTest : BaseIntegrationTest() {
     @DisplayName("Update user")
     fun testUpdateUser() {
         val username = "updateuser-${testId}"
-        val created = client.admin.users.create(
+        val created = client.users.create(
             username = username,
             email = "$username@original.com",
-            password = "UpdatePassword123#",
-            tenantId = TestConfig.DEFAULT_TENANT
-        )
+            password = "UpdatePassword123#"        )
         createdUserIds.add(created.id)
 
-        val updated = client.admin.users.update(
+        val updated = client.users.update(
             id = created.id,
             request = UpdateUserRequest(
                 email = "$username@updated.com"
@@ -180,21 +169,19 @@ class UserTest : BaseIntegrationTest() {
     @DisplayName("Delete a user")
     fun testDeleteUser() {
         val username = "deleteuser-${testId}"
-        val created = client.admin.users.create(
+        val created = client.users.create(
             username = username,
             email = "$username@example.com",
-            password = "DeletePassword123#",
-            tenantId = TestConfig.DEFAULT_TENANT
-        )
+            password = "DeletePassword123#"        )
 
         // Delete it
         assertDoesNotThrow {
-            client.admin.users.delete(created.id)
+            client.users.delete(created.id)
         }
 
         // Verify it's gone
         assertThrows<NotFoundException> {
-            client.admin.users.get(created.id)
+            client.users.get(created.id)
         }
 
         println("✓ Deleted user: ${created.username}")

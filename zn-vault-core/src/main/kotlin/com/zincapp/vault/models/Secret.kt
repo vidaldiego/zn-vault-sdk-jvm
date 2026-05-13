@@ -245,12 +245,12 @@ enum class EcdsaCurve {
 }
 
 /**
- * Request to generate a keypair.
+ * Request to generate a keypair. Tenant is derived from the authenticated
+ * principal by the server.
  */
 data class GenerateKeypairRequest(
     val algorithm: KeypairAlgorithm,
     val alias: String,
-    val tenant: String,
     val rsaBits: Int? = null,
     val ecdsaCurve: EcdsaCurve? = null,
     val comment: String? = null,

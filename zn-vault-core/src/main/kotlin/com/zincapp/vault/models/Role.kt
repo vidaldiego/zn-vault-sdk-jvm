@@ -22,14 +22,15 @@ data class Role(
 )
 
 /**
- * Request to create a custom role.
+ * Request to create a custom role. Tenant is derived from the authenticated
+ * principal by the server. For cross-tenant role creation, use
+ * ZnVaultSuperadminClient.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateRoleRequest(
     val name: String,
     val description: String? = null,
-    val permissions: List<String>,
-    val tenantId: String? = null
+    val permissions: List<String>
 )
 
 /**
@@ -53,7 +54,6 @@ data class AssignRoleRequest(
  * Filter for listing roles.
  */
 data class RoleFilter(
-    val tenantId: String? = null,
     val includeSystem: Boolean = true,
     val limit: Int = 100,
     val offset: Int = 0

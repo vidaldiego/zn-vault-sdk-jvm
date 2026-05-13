@@ -1,29 +1,32 @@
 // Path: zn-vault-sdk-jvm/zn-vault-core/src/main/kotlin/com/zincapp/vault/ZnVaultClient.kt
 package com.zincapp.vault
 
-import com.zincapp.vault.admin.AdminClient
+import com.zincapp.vault.admin.PolicyClient
+import com.zincapp.vault.admin.RoleClient
+import com.zincapp.vault.admin.UserClient
 import com.zincapp.vault.audit.AuditClient
-import com.zincapp.vault.auth.ApiKeyAuth
 import com.zincapp.vault.auth.AuthClient
-import com.zincapp.vault.auth.FileApiKeyAuth
 import com.zincapp.vault.auth.TokenManager
 import com.zincapp.vault.auth.TokenManagerConfig
 import com.zincapp.vault.health.HealthClient
-import com.zincapp.vault.http.AuthProvider
-import com.zincapp.vault.http.HttpClientConfig
 import com.zincapp.vault.http.RetryPolicy
 import com.zincapp.vault.http.TlsConfig
 import com.zincapp.vault.http.ZnVaultHttpClient
+import com.zincapp.vault.internal.ClientCoreConfig
 import com.zincapp.vault.kms.KmsClient
 import com.zincapp.vault.models.LoginResponse
 import com.zincapp.vault.secrets.SecretClient
 import java.time.Duration
 
 /**
- * Main client for interacting with ZnVault.
+ * Tenant-scoped client for interacting with ZnVault.
  *
- * This is the entry point for all ZnVault operations. Create an instance
- * using the builder pattern and then access the various client modules.
+ * This is the entry point for tenant operations. The tenant is always
+ * derived from the authenticated principal (the API key or JWT). There is
+ * no client-supplied tenant on any request.
+ *
+ * For cross-tenant administrative operations (managing tenants, users,
+ * roles, policies across tenants), use [ZnVaultSuperadminClient].
  *
  * ## Example Usage
  *
@@ -36,7 +39,6 @@ import java.time.Duration
  *
  * val secret = client.secrets.create(
  *     alias = "api/production/db-creds",
- *     tenant = "acme",
  *     type = SecretType.CREDENTIAL,
  *     data = mapOf("username" to "admin", "password" to "secret")
  * )
@@ -48,7 +50,7 @@ import java.time.Duration
  *     .baseUrl("https://vault.example.com:8443")
  *     .build()
  *
- * client.login("admin", "password")
+ * client.login("acme/admin", "password")
  * val secrets = client.secrets.list()
  * ```
  */
@@ -66,8 +68,14 @@ class ZnVaultClient private constructor(
     /** Key Management Service operations */
     val kms: KmsClient = KmsClient(httpClient)
 
-    /** Admin operations (tenants, users, roles, policies) */
-    val admin: AdminClient = AdminClient(httpClient)
+    /** Tenant-scoped user management (your tenant only). */
+    val users: UserClient = UserClient(httpClient)
+
+    /** Tenant-scoped role management (RBAC, your tenant only). */
+    val roles: RoleClient = RoleClient(httpClient)
+
+    /** Tenant-scoped policy management (ABAC, your tenant only). */
+    val policies: PolicyClient = PolicyClient(httpClient)
 
     /** Audit log operations */
     val audit: AuditClient = AuditClient(httpClient)
@@ -268,224 +276,66 @@ class ZnVaultClient private constructor(
      * Builder for ZnVaultClient.
      */
     class Builder {
-        private var baseUrl: String = DEFAULT_BASE_URL
-        private var apiKey: String? = null
-        private var apiKeyFilePath: String? = null
-        private var apiKeyEnvName: String? = null
-        private var connectTimeout: Duration = Duration.ofSeconds(30)
-        private var readTimeout: Duration = Duration.ofSeconds(30)
-        private var writeTimeout: Duration = Duration.ofSeconds(30)
-        private var retryPolicy: RetryPolicy = RetryPolicy.default()
-        private var tlsConfig: TlsConfig? = null
-        private var debug: Boolean = false
-        private var tokenConfig: TokenManagerConfig = TokenManagerConfig()
+        private val config = ClientCoreConfig(baseUrl = DEFAULT_BASE_URL)
+
+        /** Set the base URL for the ZnVault server. */
+        fun baseUrl(url: String) = apply { config.baseUrl = url.trimEnd('/') }
 
         /**
-         * Set the base URL for the ZnVault server.
-         *
-         * @param url Base URL (e.g., "https://vault.example.com:8443")
-         */
-        fun baseUrl(url: String) = apply {
-            this.baseUrl = url.trimEnd('/')
-        }
-
-        /**
-         * Set API key for authentication.
-         *
-         * When set, the client will use API key authentication instead of JWT.
-         * For automatic key rotation support, use [apiKeyFile] or [apiKeyFromEnv] instead.
-         *
-         * @param key API key (e.g., "znv_xxxx_secretkey")
+         * Set API key for authentication. When set, the client uses API key
+         * authentication instead of JWT. For automatic key rotation support,
+         * use [apiKeyFile] or [apiKeyFromEnv] instead.
          */
         fun apiKey(key: String) = apply {
-            this.apiKey = key
-            this.apiKeyFilePath = null
-            this.apiKeyEnvName = null
+            config.apiKey = key
+            config.apiKeyFilePath = null
+            config.apiKeyEnvName = null
         }
 
-        /**
-         * Set API key file path for authentication with automatic refresh.
-         *
-         * The API key will be read from the specified file. When a 401 error
-         * occurs, the file will be re-read and the request retried if the
-         * key has changed. This supports automatic key rotation by zn-vault-agent.
-         *
-         * @param filePath Path to file containing the API key
-         */
+        /** Set API key file path for authentication with automatic refresh. */
         fun apiKeyFile(filePath: String) = apply {
-            this.apiKeyFilePath = filePath
-            this.apiKey = null
-            this.apiKeyEnvName = null
+            config.apiKeyFilePath = filePath
+            config.apiKey = null
+            config.apiKeyEnvName = null
         }
 
-        /**
-         * Configure API key from environment variables with automatic file detection.
-         *
-         * Checks for credentials in this order:
-         * 1. `{envName}_FILE` - Path to file containing API key (preferred)
-         * 2. `{envName}` - Direct API key value (fallback)
-         *
-         * When using file mode, supports automatic key rotation.
-         *
-         * @param envName Base environment variable name (e.g., "VAULT_API_KEY")
-         */
+        /** Configure API key from environment variables with file-mode detection. */
         fun apiKeyFromEnv(envName: String) = apply {
-            this.apiKeyEnvName = envName
-            this.apiKey = null
-            this.apiKeyFilePath = null
+            config.apiKeyEnvName = envName
+            config.apiKey = null
+            config.apiKeyFilePath = null
         }
 
-        /**
-         * Set connection timeout.
-         *
-         * @param timeout Connection timeout duration
-         */
-        fun connectTimeout(timeout: Duration) = apply {
-            this.connectTimeout = timeout
-        }
+        fun connectTimeout(timeout: Duration) = apply { config.connectTimeout = timeout }
+        fun readTimeout(timeout: Duration) = apply { config.readTimeout = timeout }
+        fun writeTimeout(timeout: Duration) = apply { config.writeTimeout = timeout }
 
-        /**
-         * Set read timeout.
-         *
-         * @param timeout Read timeout duration
-         */
-        fun readTimeout(timeout: Duration) = apply {
-            this.readTimeout = timeout
-        }
-
-        /**
-         * Set write timeout.
-         *
-         * @param timeout Write timeout duration
-         */
-        fun writeTimeout(timeout: Duration) = apply {
-            this.writeTimeout = timeout
-        }
-
-        /**
-         * Set all timeouts to the same value.
-         *
-         * @param timeout Timeout duration for connect, read, and write
-         */
+        /** Set all timeouts to the same value. */
         fun timeout(timeout: Duration) = apply {
-            this.connectTimeout = timeout
-            this.readTimeout = timeout
-            this.writeTimeout = timeout
+            config.connectTimeout = timeout
+            config.readTimeout = timeout
+            config.writeTimeout = timeout
         }
 
-        /**
-         * Set retry policy.
-         *
-         * @param policy Retry policy configuration
-         */
-        fun retryPolicy(policy: RetryPolicy) = apply {
-            this.retryPolicy = policy
-        }
+        fun retryPolicy(policy: RetryPolicy) = apply { config.retryPolicy = policy }
+        fun noRetries() = apply { config.retryPolicy = RetryPolicy.none() }
+        fun tlsConfig(config: TlsConfig) = apply { this.config.tlsConfig = config }
 
-        /**
-         * Disable retries.
-         */
-        fun noRetries() = apply {
-            this.retryPolicy = RetryPolicy.none()
-        }
+        /** Use insecure TLS (trust all certificates). WARNING: development only. */
+        fun insecureTls() = apply { config.tlsConfig = TlsConfig.insecure() }
 
-        /**
-         * Set TLS configuration.
-         *
-         * Use this for custom CA certificates or client certificate (mTLS).
-         *
-         * @param config TLS configuration
-         */
-        fun tlsConfig(config: TlsConfig) = apply {
-            this.tlsConfig = config
-        }
-
-        /**
-         * Use insecure TLS (trust all certificates).
-         *
-         * WARNING: Only use this for development!
-         */
-        fun insecureTls() = apply {
-            this.tlsConfig = TlsConfig.insecure()
-        }
-
-        /**
-         * Set CA certificate for server verification.
-         *
-         * @param path Path to CA certificate file (PEM format)
-         */
+        /** Set CA certificate for server verification. */
         fun caCertificate(path: String) = apply {
-            this.tlsConfig = TlsConfig.builder()
-                .caCertificate(path)
-                .build()
+            config.tlsConfig = TlsConfig.builder().caCertificate(path).build()
         }
 
-        /**
-         * Enable debug logging.
-         */
-        fun debug(enabled: Boolean = true) = apply {
-            this.debug = enabled
-        }
+        fun debug(enabled: Boolean = true) = apply { config.debug = enabled }
+        fun tokenConfig(config: TokenManagerConfig) = apply { this.config.tokenConfig = config }
 
-        /**
-         * Configure token manager settings.
-         *
-         * @param config Token manager configuration
-         */
-        fun tokenConfig(config: TokenManagerConfig) = apply {
-            this.tokenConfig = config
-        }
-
-        /**
-         * Build the ZnVaultClient.
-         *
-         * @return Configured ZnVaultClient instance
-         */
+        /** Build the ZnVaultClient. */
         fun build(): ZnVaultClient {
-            val url = baseUrl
-
-            val httpConfig = HttpClientConfig(
-                connectTimeout = connectTimeout,
-                readTimeout = readTimeout,
-                writeTimeout = writeTimeout,
-                retryPolicy = retryPolicy,
-                tlsConfig = tlsConfig,
-                debug = debug
-            )
-
-            val httpClient = ZnVaultHttpClient(url, httpConfig)
-
-            // Set up authentication based on configuration
-            val authProvider: AuthProvider? = when {
-                // Priority 1: Direct API key
-                apiKey != null -> ApiKeyAuth(apiKey!!)
-
-                // Priority 2: API key from file (with refresh support)
-                apiKeyFilePath != null -> FileApiKeyAuth(apiKeyFilePath!!)
-
-                // Priority 3: API key from environment (auto-detects file mode)
-                apiKeyEnvName != null -> FileApiKeyAuth.fromEnv(apiKeyEnvName!!)
-
-                // No API key configured - will use JWT
-                else -> null
-            }
-
-            val tokenManager: TokenManager?
-            val effectiveApiKey: String?
-
-            if (authProvider != null) {
-                // Use API key authentication
-                tokenManager = null
-                effectiveApiKey = authProvider.getApiKey()
-                httpClient.setAuthProvider(authProvider)
-            } else {
-                // Use JWT token authentication
-                tokenManager = TokenManager(httpClient, tokenConfig)
-                effectiveApiKey = null
-                httpClient.setAuthProvider(tokenManager)
-            }
-
-            return ZnVaultClient(httpClient, tokenManager, effectiveApiKey)
+            val core = config.buildCore()
+            return ZnVaultClient(core.httpClient, core.tokenManager, core.apiKey)
         }
     }
 }

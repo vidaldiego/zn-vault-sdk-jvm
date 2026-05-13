@@ -23,21 +23,14 @@ class PolicyClient internal constructor(
     }
 
     /**
-     * Create a simple allow policy.
-     *
-     * @param name Policy name
-     * @param resources List of resource patterns
-     * @param actions List of action patterns
-     * @param description Optional description
-     * @param tenantId Optional tenant ID
-     * @return Created policy
+     * Create a simple allow policy in the caller's tenant. Tenant is derived
+     * from the authenticated principal by the server.
      */
     fun createAllowPolicy(
         name: String,
         resources: List<String>,
         actions: List<String>,
-        description: String? = null,
-        tenantId: String? = null
+        description: String? = null
     ): Policy {
         return create(
             CreatePolicyRequest(
@@ -45,28 +38,20 @@ class PolicyClient internal constructor(
                 description = description,
                 effect = PolicyEffect.ALLOW,
                 resources = resources,
-                actions = actions,
-                tenantId = tenantId
+                actions = actions
             )
         )
     }
 
     /**
-     * Create a simple deny policy.
-     *
-     * @param name Policy name
-     * @param resources List of resource patterns
-     * @param actions List of action patterns
-     * @param description Optional description
-     * @param tenantId Optional tenant ID
-     * @return Created policy
+     * Create a simple deny policy in the caller's tenant. Tenant is derived
+     * from the authenticated principal by the server.
      */
     fun createDenyPolicy(
         name: String,
         resources: List<String>,
         actions: List<String>,
-        description: String? = null,
-        tenantId: String? = null
+        description: String? = null
     ): Policy {
         return create(
             CreatePolicyRequest(
@@ -74,8 +59,7 @@ class PolicyClient internal constructor(
                 description = description,
                 effect = PolicyEffect.DENY,
                 resources = resources,
-                actions = actions,
-                tenantId = tenantId
+                actions = actions
             )
         )
     }
@@ -191,7 +175,6 @@ class PolicyClient internal constructor(
     private fun buildFilterParams(filter: PolicyFilter): String {
         val params = mutableListOf<String>()
 
-        filter.tenantId?.let { params.add("tenantId=$it") }
         filter.enabled?.let { params.add("enabled=$it") }
         filter.effect?.let { params.add("effect=${it.name.lowercase()}") }
         params.add("limit=${filter.limit}")

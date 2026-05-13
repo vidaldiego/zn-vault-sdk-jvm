@@ -45,7 +45,6 @@ class KmsTest : BaseIntegrationTest() {
                 description = "Test AES-256 key for SDK tests",
                 usage = KeyUsage.ENCRYPT_DECRYPT,
                 keySpec = KeySpec.AES_256,
-                tenant = TestConfig.DEFAULT_TENANT,
                 tags = listOf(KeyTag("purpose", "testing"))
             )
         )
@@ -68,7 +67,6 @@ class KmsTest : BaseIntegrationTest() {
     @DisplayName("Create key using simplified method")
     fun testCreateKeySimplified() {
         val key = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/simple-${testId}",
             description = "Simple test key"
         )
@@ -90,7 +88,6 @@ class KmsTest : BaseIntegrationTest() {
     fun testGetKey() {
         // Create a key first
         val created = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/get-test-${testId}"
         )
         createdKeyIds.add(created.keyId)
@@ -111,7 +108,6 @@ class KmsTest : BaseIntegrationTest() {
         // Create a few keys
         repeat(2) { i ->
             val key = client.kms.createKey(
-                tenant = TestConfig.DEFAULT_TENANT,
                 alias = "alias/list-test-$i-${testId}"
             )
             createdKeyIds.add(key.keyId)
@@ -119,7 +115,6 @@ class KmsTest : BaseIntegrationTest() {
 
         val keyList = client.kms.listKeys(
             KeyFilter(
-                tenant = TestConfig.DEFAULT_TENANT,
                 limit = 10
             )
         )
@@ -136,7 +131,6 @@ class KmsTest : BaseIntegrationTest() {
     fun testEncryptDecrypt() {
         // Create a key
         val key = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/encrypt-test-${testId}"
         )
         createdKeyIds.add(key.keyId)
@@ -170,7 +164,6 @@ class KmsTest : BaseIntegrationTest() {
     @DisplayName("Encrypt and decrypt binary data")
     fun testEncryptDecryptBinary() {
         val key = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/binary-test-${testId}"
         )
         createdKeyIds.add(key.keyId)
@@ -198,7 +191,6 @@ class KmsTest : BaseIntegrationTest() {
     @DisplayName("Encrypt with encryption context")
     fun testEncryptWithContext() {
         val key = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/context-test-${testId}"
         )
         createdKeyIds.add(key.keyId)
@@ -234,7 +226,6 @@ class KmsTest : BaseIntegrationTest() {
     @DisplayName("Generate data key")
     fun testGenerateDataKey() {
         val key = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/dek-test-${testId}"
         )
         createdKeyIds.add(key.keyId)
@@ -261,7 +252,6 @@ class KmsTest : BaseIntegrationTest() {
     @DisplayName("Generate data key without plaintext")
     fun testGenerateDataKeyWithoutPlaintext() {
         val key = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/dek-noplain-${testId}"
         )
         createdKeyIds.add(key.keyId)
@@ -285,7 +275,6 @@ class KmsTest : BaseIntegrationTest() {
     @DisplayName("Disable and enable key")
     fun testDisableEnableKey() {
         val key = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/state-test-${testId}"
         )
         createdKeyIds.add(key.keyId)
@@ -310,7 +299,6 @@ class KmsTest : BaseIntegrationTest() {
     @DisplayName("Update key description")
     fun testUpdateKeyDescription() {
         val key = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/desc-test-${testId}",
             description = "Original description"
         )
@@ -330,7 +318,6 @@ class KmsTest : BaseIntegrationTest() {
     @DisplayName("Update key alias")
     fun testUpdateKeyAlias() {
         val key = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/alias-test-${testId}"
         )
         createdKeyIds.add(key.keyId)
@@ -352,7 +339,6 @@ class KmsTest : BaseIntegrationTest() {
     @DisplayName("Rotate key manually")
     fun testRotateKey() {
         val key = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/rotate-test-${testId}"
         )
         createdKeyIds.add(key.keyId)
@@ -370,7 +356,6 @@ class KmsTest : BaseIntegrationTest() {
     @DisplayName("Get rotation status")
     fun testGetRotationStatus() {
         val key = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/rotation-status-${testId}"
         )
         createdKeyIds.add(key.keyId)
@@ -389,7 +374,6 @@ class KmsTest : BaseIntegrationTest() {
     @DisplayName("Configure automatic rotation")
     fun testConfigureRotation() {
         val key = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/auto-rotate-${testId}"
         )
         createdKeyIds.add(key.keyId)
@@ -413,7 +397,6 @@ class KmsTest : BaseIntegrationTest() {
     @DisplayName("Schedule and cancel key deletion")
     fun testScheduleAndCancelDeletion() {
         val key = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/delete-test-${testId}"
         )
         // Don't add to createdKeyIds - we'll handle cleanup manually
@@ -442,7 +425,6 @@ class KmsTest : BaseIntegrationTest() {
     @DisplayName("Decrypt old ciphertext after key rotation")
     fun testDecryptAfterRotation() {
         val key = client.kms.createKey(
-            tenant = TestConfig.DEFAULT_TENANT,
             alias = "alias/rotation-decrypt-${testId}"
         )
         createdKeyIds.add(key.keyId)

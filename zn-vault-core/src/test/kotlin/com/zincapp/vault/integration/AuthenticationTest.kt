@@ -183,14 +183,12 @@ class AuthenticationTest : BaseIntegrationTest() {
     @Order(40)
     @DisplayName("Create API key")
     fun testCreateApiKey() {
-        client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
+        client.login(TestConfig.Users.TENANT_ADMIN_USERNAME, TestConfig.Users.TENANT_ADMIN_PASSWORD)
 
         val response = client.auth.createApiKey(
             name = "test-key-${testId}",
             permissions = listOf("secret:read:metadata", "secret:read:value"),
-            expiresInDays = 30,
-            tenantId = TestConfig.DEFAULT_TENANT
-        )
+            expiresInDays = 30        )
 
         assertNotNull(response.apiKey.id)
         assertNotNull(response.key)
@@ -205,7 +203,7 @@ class AuthenticationTest : BaseIntegrationTest() {
     @Order(41)
     @DisplayName("List API keys")
     fun testListApiKeys() {
-        client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
+        client.login(TestConfig.Users.TENANT_ADMIN_USERNAME, TestConfig.Users.TENANT_ADMIN_PASSWORD)
 
         val keys = client.auth.listApiKeys()
 
@@ -221,14 +219,12 @@ class AuthenticationTest : BaseIntegrationTest() {
     @DisplayName("Use API key for authentication")
     fun testApiKeyAuthentication() {
         // First create an API key
-        client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
+        client.login(TestConfig.Users.TENANT_ADMIN_USERNAME, TestConfig.Users.TENANT_ADMIN_PASSWORD)
 
         val keyResponse = client.auth.createApiKey(
             name = "auth-test-key-${testId}",
             permissions = listOf("*"),
-            expiresInDays = 1,
-            tenantId = TestConfig.DEFAULT_TENANT
-        )
+            expiresInDays = 1        )
 
         // Create new client with API key
         val apiKeyClient = ZnVaultClient.builder()
@@ -251,15 +247,13 @@ class AuthenticationTest : BaseIntegrationTest() {
     @Order(43)
     @DisplayName("Rotate API key")
     fun testRotateApiKey() {
-        client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
+        client.login(TestConfig.Users.TENANT_ADMIN_USERNAME, TestConfig.Users.TENANT_ADMIN_PASSWORD)
 
         // Create a key to rotate
         val originalKey = client.auth.createApiKey(
             name = "rotate-test-key-${testId}",
             permissions = listOf("secret:read:*"),
-            expiresInDays = 1,
-            tenantId = TestConfig.DEFAULT_TENANT
-        )
+            expiresInDays = 1        )
 
         // Rotate the key (note: rotation creates a new key with new ID)
         val rotatedKey = client.auth.rotateApiKey(originalKey.apiKey.id)
@@ -280,15 +274,13 @@ class AuthenticationTest : BaseIntegrationTest() {
     @Order(44)
     @DisplayName("Delete API key")
     fun testDeleteApiKey() {
-        client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
+        client.login(TestConfig.Users.TENANT_ADMIN_USERNAME, TestConfig.Users.TENANT_ADMIN_PASSWORD)
 
         // Create a key to delete
         val keyResponse = client.auth.createApiKey(
             name = "delete-test-key-${testId}",
             permissions = listOf("secret:read:metadata"),
-            expiresInDays = 1,
-            tenantId = TestConfig.DEFAULT_TENANT
-        )
+            expiresInDays = 1        )
 
         // Delete it
         assertDoesNotThrow {
@@ -303,14 +295,12 @@ class AuthenticationTest : BaseIntegrationTest() {
     @DisplayName("Self-rotate current API key")
     fun testSelfRotateApiKey() {
         // First create an API key
-        client.login(TestConfig.Users.SUPERADMIN_USERNAME, TestConfig.Users.SUPERADMIN_PASSWORD)
+        client.login(TestConfig.Users.TENANT_ADMIN_USERNAME, TestConfig.Users.TENANT_ADMIN_PASSWORD)
 
         val originalKey = client.auth.createApiKey(
             name = "self-rotate-test-key-${testId}",
             permissions = listOf("*"),
-            expiresInDays = 1,
-            tenantId = TestConfig.DEFAULT_TENANT
-        )
+            expiresInDays = 1        )
 
         // Create new client with API key
         val apiKeyClient = ZnVaultClient.builder()

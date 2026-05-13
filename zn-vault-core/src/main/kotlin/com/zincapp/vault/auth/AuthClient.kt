@@ -82,7 +82,9 @@ class AuthClient internal constructor(
     // ==================== API Keys ====================
 
     /**
-     * Create a new API key.
+     * Create a new API key in the caller's tenant. Tenant is derived from
+     * the authenticated principal by the server. For cross-tenant API key
+     * creation, use ZnVaultSuperadminClient.
      *
      * @param name Name for the API key
      * @param permissions Required list of permissions for the key (e.g., ["secret:read:*"])
@@ -90,7 +92,6 @@ class AuthClient internal constructor(
      * @param description Optional description
      * @param ipAllowlist Optional list of allowed IPs/CIDRs
      * @param conditions Optional inline ABAC conditions
-     * @param tenantId Required for superadmin creating tenant-scoped keys
      * @return Created API key (key value is only shown once!)
      */
     fun createApiKey(
@@ -99,8 +100,7 @@ class AuthClient internal constructor(
         expiresInDays: Int? = null,
         description: String? = null,
         ipAllowlist: List<String>? = null,
-        conditions: ApiKeyConditions? = null,
-        tenantId: String? = null
+        conditions: ApiKeyConditions? = null
     ): CreateApiKeyResponse {
         val request = CreateApiKeyRequest(
             name = name,
@@ -110,15 +110,7 @@ class AuthClient internal constructor(
             ipAllowlist = ipAllowlist,
             conditions = conditions
         )
-
-        // Tenant ID is passed as query parameter
-        val path = if (tenantId != null) {
-            "/auth/api-keys?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
-        } else {
-            "/auth/api-keys"
-        }
-
-        return httpClient.post(path, request, CreateApiKeyResponse::class.java)
+        return httpClient.post("/auth/api-keys", request, CreateApiKeyResponse::class.java)
     }
 
     /**
@@ -212,24 +204,13 @@ class AuthClient internal constructor(
     }
 
     // ==================== Managed API Keys ====================
+    //
+    // All managed-key and registration-token methods are scoped to the
+    // caller's tenant. For cross-tenant management, use ZnVaultSuperadminClient.
 
     /**
-     * Create a managed API key with auto-rotation configuration.
-     *
-     * Managed keys automatically rotate based on the configured mode:
-     * - SCHEDULED: Rotates at fixed intervals (requires rotationInterval)
-     * - ON_USE: Rotates after being used (TTL resets on each use)
-     * - ON_BIND: Rotates each time bind is called
-     *
-     * @param name Unique name for the managed key
-     * @param permissions List of permissions for the key
-     * @param rotationMode Rotation mode
-     * @param rotationInterval Interval for scheduled rotation (e.g., "24h", "7d")
-     * @param gracePeriod Grace period for smooth transitions (e.g., "5m")
-     * @param description Optional description
-     * @param expiresInDays Optional expiration in days
-     * @param tenantId Required for superadmin creating tenant-scoped keys
-     * @return The created managed key metadata (use bind to get the key value)
+     * Create a managed API key with auto-rotation configuration in the
+     * caller's tenant.
      */
     fun createManagedApiKey(
         name: String,
@@ -238,8 +219,7 @@ class AuthClient internal constructor(
         rotationInterval: String? = null,
         gracePeriod: String? = null,
         description: String? = null,
-        expiresInDays: Int? = null,
-        tenantId: String? = null
+        expiresInDays: Int? = null
     ): CreateManagedApiKeyResponse {
         val request = CreateManagedApiKeyRequest(
             name = name,
@@ -250,49 +230,19 @@ class AuthClient internal constructor(
             description = description,
             expiresInDays = expiresInDays
         )
-
-        val path = if (tenantId != null) {
-            "/auth/api-keys/managed?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
-        } else {
-            "/auth/api-keys/managed"
-        }
-
-        return httpClient.post(path, request, CreateManagedApiKeyResponse::class.java)
+        return httpClient.post("/auth/api-keys/managed", request, CreateManagedApiKeyResponse::class.java)
     }
 
-    /**
-     * List managed API keys.
-     *
-     * @param tenantId Optional tenant ID filter (for superadmin)
-     * @return List of managed keys
-     */
-    fun listManagedApiKeys(tenantId: String? = null): List<ManagedApiKey> {
-        val path = if (tenantId != null) {
-            "/auth/api-keys/managed?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
-        } else {
-            "/auth/api-keys/managed"
-        }
-
-        val response = httpClient.get(path, ManagedApiKeyListResponse::class.java)
+    /** List managed API keys in the caller's tenant. */
+    fun listManagedApiKeys(): List<ManagedApiKey> {
+        val response = httpClient.get("/auth/api-keys/managed", ManagedApiKeyListResponse::class.java)
         return response.keys
     }
 
-    /**
-     * Get a managed API key by name.
-     *
-     * @param name The managed key name
-     * @param tenantId Optional tenant ID (for cross-tenant access)
-     * @return The managed key metadata
-     */
-    fun getManagedApiKey(name: String, tenantId: String? = null): ManagedApiKey {
+    /** Get a managed API key by name in the caller's tenant. */
+    fun getManagedApiKey(name: String): ManagedApiKey {
         val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
-        val path = if (tenantId != null) {
-            "/auth/api-keys/managed/$encodedName?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
-        } else {
-            "/auth/api-keys/managed/$encodedName"
-        }
-
-        return httpClient.get(path, ManagedApiKey::class.java)
+        return httpClient.get("/auth/api-keys/managed/$encodedName", ManagedApiKey::class.java)
     }
 
     /**
@@ -305,20 +255,10 @@ class AuthClient internal constructor(
      * Security: This endpoint requires the caller to already have a valid
      * API key (the current one, even during grace period). This prevents
      * unauthorized access to managed keys.
-     *
-     * @param name The managed key name
-     * @param tenantId Optional tenant ID (for cross-tenant access)
-     * @return The current key value and rotation metadata
      */
-    fun bindManagedApiKey(name: String, tenantId: String? = null): ManagedKeyBindResponse {
+    fun bindManagedApiKey(name: String): ManagedKeyBindResponse {
         val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
-        val path = if (tenantId != null) {
-            "/auth/api-keys/managed/$encodedName/bind?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
-        } else {
-            "/auth/api-keys/managed/$encodedName/bind"
-        }
-
-        return httpClient.postEmpty(path, ManagedKeyBindResponse::class.java)
+        return httpClient.postEmpty("/auth/api-keys/managed/$encodedName/bind", ManagedKeyBindResponse::class.java)
     }
 
     /**
@@ -326,70 +266,32 @@ class AuthClient internal constructor(
      *
      * Creates a new key immediately, regardless of the rotation schedule.
      * The old key remains valid during the grace period.
-     *
-     * @param name The managed key name
-     * @param tenantId Optional tenant ID (for cross-tenant access)
-     * @return The new key value and rotation info
      */
-    fun rotateManagedApiKey(name: String, tenantId: String? = null): ManagedKeyRotateResponse {
+    fun rotateManagedApiKey(name: String): ManagedKeyRotateResponse {
         val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
-        val path = if (tenantId != null) {
-            "/auth/api-keys/managed/$encodedName/rotate?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
-        } else {
-            "/auth/api-keys/managed/$encodedName/rotate"
-        }
-
-        return httpClient.postEmpty(path, ManagedKeyRotateResponse::class.java)
+        return httpClient.postEmpty("/auth/api-keys/managed/$encodedName/rotate", ManagedKeyRotateResponse::class.java)
     }
 
-    /**
-     * Update managed API key configuration.
-     *
-     * @param name The managed key name
-     * @param rotationInterval New rotation interval
-     * @param gracePeriod New grace period
-     * @param enabled Enable/disable the key
-     * @param tenantId Optional tenant ID (for cross-tenant access)
-     * @return Updated managed key metadata
-     */
+    /** Update managed API key configuration. */
     fun updateManagedApiKeyConfig(
         name: String,
         rotationInterval: String? = null,
         gracePeriod: String? = null,
-        enabled: Boolean? = null,
-        tenantId: String? = null
+        enabled: Boolean? = null
     ): ManagedApiKey {
         val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
-        val path = if (tenantId != null) {
-            "/auth/api-keys/managed/$encodedName/config?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
-        } else {
-            "/auth/api-keys/managed/$encodedName/config"
-        }
-
         val request = UpdateManagedApiKeyConfigRequest(
             rotationInterval = rotationInterval,
             gracePeriod = gracePeriod,
             enabled = enabled
         )
-
-        return httpClient.patch(path, request, ManagedApiKey::class.java)
+        return httpClient.patch("/auth/api-keys/managed/$encodedName/config", request, ManagedApiKey::class.java)
     }
 
-    /**
-     * Delete a managed API key.
-     *
-     * @param name The managed key name
-     * @param tenantId Optional tenant ID (for cross-tenant access)
-     */
-    fun deleteManagedApiKey(name: String, tenantId: String? = null) {
+    /** Delete a managed API key. */
+    fun deleteManagedApiKey(name: String) {
         val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
-        val path = if (tenantId != null) {
-            "/auth/api-keys/managed/$encodedName?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
-        } else {
-            "/auth/api-keys/managed/$encodedName"
-        }
-
-        httpClient.delete(path)
+        httpClient.delete("/auth/api-keys/managed/$encodedName")
     }
 
     // ==================== Registration Tokens (Agent Bootstrap) ====================
@@ -399,84 +301,43 @@ class AuthClient internal constructor(
      *
      * Registration tokens are one-time use tokens that allow agents to
      * obtain their managed API key without prior authentication.
-     *
-     * @param managedKeyName The managed key to create a token for
-     * @param expiresIn Token expiration (e.g., "1h", "24h"). Min 1m, max 24h.
-     * @param description Optional description for audit trail
-     * @param tenantId Optional tenant ID (for cross-tenant access)
-     * @return The created token (shown only once - save it immediately!)
      */
     fun createRegistrationToken(
         managedKeyName: String,
         expiresIn: String? = null,
-        description: String? = null,
-        tenantId: String? = null
+        description: String? = null
     ): CreateRegistrationTokenResponse {
         val encodedName = java.net.URLEncoder.encode(managedKeyName, "UTF-8")
-        val path = if (tenantId != null) {
-            "/auth/api-keys/managed/$encodedName/registration-tokens?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
-        } else {
-            "/auth/api-keys/managed/$encodedName/registration-tokens"
-        }
-
         val request = CreateRegistrationTokenRequest(
             expiresIn = expiresIn,
             description = description
         )
-
-        return httpClient.post(path, request, CreateRegistrationTokenResponse::class.java)
+        return httpClient.post(
+            "/auth/api-keys/managed/$encodedName/registration-tokens",
+            request,
+            CreateRegistrationTokenResponse::class.java
+        )
     }
 
-    /**
-     * List registration tokens for a managed key.
-     *
-     * @param managedKeyName The managed key name
-     * @param includeUsed Include tokens that have been used
-     * @param tenantId Optional tenant ID (for cross-tenant access)
-     * @return List of registration tokens
-     */
+    /** List registration tokens for a managed key. */
     fun listRegistrationTokens(
         managedKeyName: String,
-        includeUsed: Boolean = false,
-        tenantId: String? = null
+        includeUsed: Boolean = false
     ): List<RegistrationToken> {
         val encodedName = java.net.URLEncoder.encode(managedKeyName, "UTF-8")
-        val queryParams = mutableListOf<String>()
-        if (includeUsed) queryParams.add("includeUsed=true")
-        if (tenantId != null) queryParams.add("tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}")
-
-        val path = if (queryParams.isNotEmpty()) {
-            "/auth/api-keys/managed/$encodedName/registration-tokens?${queryParams.joinToString("&")}"
+        val path = if (includeUsed) {
+            "/auth/api-keys/managed/$encodedName/registration-tokens?includeUsed=true"
         } else {
             "/auth/api-keys/managed/$encodedName/registration-tokens"
         }
-
         val response = httpClient.get(path, RegistrationTokenListResponse::class.java)
         return response.tokens
     }
 
-    /**
-     * Revoke a registration token.
-     *
-     * Prevents the token from being used for bootstrapping.
-     *
-     * @param managedKeyName The managed key name
-     * @param tokenId The token ID to revoke
-     * @param tenantId Optional tenant ID (for cross-tenant access)
-     */
-    fun revokeRegistrationToken(
-        managedKeyName: String,
-        tokenId: String,
-        tenantId: String? = null
-    ) {
+    /** Revoke a registration token. */
+    fun revokeRegistrationToken(managedKeyName: String, tokenId: String) {
         val encodedName = java.net.URLEncoder.encode(managedKeyName, "UTF-8")
-        val path = if (tenantId != null) {
-            "/auth/api-keys/managed/$encodedName/registration-tokens/$tokenId?tenantId=${java.net.URLEncoder.encode(tenantId, "UTF-8")}"
-        } else {
-            "/auth/api-keys/managed/$encodedName/registration-tokens/$tokenId"
-        }
-
-        httpClient.delete(path)
+        httpClient.delete("/auth/api-keys/managed/$encodedName/registration-tokens/$tokenId")
     }
 
     /**

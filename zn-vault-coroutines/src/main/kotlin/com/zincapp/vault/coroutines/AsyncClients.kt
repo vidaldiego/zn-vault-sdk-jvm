@@ -140,11 +140,10 @@ class AsyncKmsClient(private val sync: KmsClient) {
     }
 
     suspend fun createKey(
-        tenant: String,
         alias: String? = null,
         description: String? = null
     ): KmsKey = withContext(Dispatchers.IO) {
-        sync.createKey(tenant, alias, description)
+        sync.createKey(alias, description)
     }
 
     suspend fun getKey(keyId: String): KmsKey = withContext(Dispatchers.IO) {
@@ -288,10 +287,9 @@ class AsyncUserClient(private val sync: UserClient) {
     suspend fun create(
         username: String,
         password: String,
-        email: String? = null,
-        tenantId: String? = null
+        email: String? = null
     ): User = withContext(Dispatchers.IO) {
-        sync.create(username, password, email, tenantId)
+        sync.create(username, password, email)
     }
 
     suspend fun get(id: String): User = withContext(Dispatchers.IO) {
@@ -346,10 +344,9 @@ class AsyncRoleClient(private val sync: RoleClient) {
     suspend fun create(
         name: String,
         permissions: List<String>,
-        description: String? = null,
-        tenantId: String? = null
+        description: String? = null
     ): Role = withContext(Dispatchers.IO) {
-        sync.create(name, permissions, description, tenantId)
+        sync.create(name, permissions, description)
     }
 
     suspend fun get(id: String): Role = withContext(Dispatchers.IO) {
@@ -539,10 +536,9 @@ class AsyncAuthClient(private val sync: AuthClient) {
         expiresInDays: Int? = null,
         description: String? = null,
         ipAllowlist: List<String>? = null,
-        conditions: ApiKeyConditions? = null,
-        tenantId: String? = null
+        conditions: ApiKeyConditions? = null
     ): CreateApiKeyResponse = withContext(Dispatchers.IO) {
-        sync.createApiKey(name, permissions, expiresInDays, description, ipAllowlist, conditions, tenantId)
+        sync.createApiKey(name, permissions, expiresInDays, description, ipAllowlist, conditions)
     }
 
     suspend fun listApiKeys(): List<ApiKey> = withContext(Dispatchers.IO) {

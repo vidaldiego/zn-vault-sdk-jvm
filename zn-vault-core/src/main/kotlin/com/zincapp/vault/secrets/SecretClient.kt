@@ -758,7 +758,6 @@ class SecretClient internal constructor(
      *
      * @param algorithm Keypair algorithm (RSA, Ed25519, ECDSA)
      * @param alias Secret alias for the private key
-     * @param tenant Tenant name
      * @param rsaBits RSA key size (2048 or 4096, defaults to 2048)
      * @param ecdsaCurve ECDSA curve (P-256 or P-384, defaults to P-256)
      * @param comment Optional comment for the keypair
@@ -769,7 +768,6 @@ class SecretClient internal constructor(
     fun generateKeypair(
         algorithm: KeypairAlgorithm,
         alias: String,
-        tenant: String,
         rsaBits: Int? = null,
         ecdsaCurve: EcdsaCurve? = null,
         comment: String? = null,
@@ -779,7 +777,6 @@ class SecretClient internal constructor(
         return generateKeypair(GenerateKeypairRequest(
             algorithm = algorithm,
             alias = alias,
-            tenant = tenant,
             rsaBits = rsaBits,
             ecdsaCurve = ecdsaCurve,
             comment = comment,

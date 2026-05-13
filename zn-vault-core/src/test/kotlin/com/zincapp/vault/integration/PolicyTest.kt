@@ -18,7 +18,7 @@ class PolicyTest : BaseIntegrationTest() {
         // Clean up created policies
         createdPolicyIds.forEach { id ->
             try {
-                client.admin.policies.delete(id)
+                client.policies.delete(id)
                 println("  Cleaned up policy: $id")
             } catch (e: Exception) {
                 // Ignore cleanup errors
@@ -35,7 +35,7 @@ class PolicyTest : BaseIntegrationTest() {
     fun testCreatePolicy() {
         val policyName = "test-policy-${testId}"
 
-        val policy = client.admin.policies.create(
+        val policy = client.policies.create(
             CreatePolicyRequest(
                 name = policyName,
                 description = "Policy for SDK testing",
@@ -65,7 +65,7 @@ class PolicyTest : BaseIntegrationTest() {
     fun testCreateDenyPolicy() {
         val policyName = "deny-policy-${testId}"
 
-        val policy = client.admin.policies.createDenyPolicy(
+        val policy = client.policies.createDenyPolicy(
             name = policyName,
             description = "Deny policy for testing",
             actions = listOf("secret:delete"),
@@ -86,7 +86,7 @@ class PolicyTest : BaseIntegrationTest() {
     fun testCreatePolicyWithConditions() {
         val policyName = "cond-policy-${testId}"
 
-        val policy = client.admin.policies.create(
+        val policy = client.policies.create(
             CreatePolicyRequest(
                 name = policyName,
                 description = "Conditional policy",
@@ -115,7 +115,7 @@ class PolicyTest : BaseIntegrationTest() {
     @DisplayName("Get policy by ID")
     fun testGetPolicy() {
         val policyName = "get-policy-${testId}"
-        val created = client.admin.policies.createAllowPolicy(
+        val created = client.policies.createAllowPolicy(
             name = policyName,
             description = "Get test policy",
             actions = listOf("secret:list"),
@@ -123,7 +123,7 @@ class PolicyTest : BaseIntegrationTest() {
         )
         createdPolicyIds.add(created.id)
 
-        val policy = client.admin.policies.get(created.id)
+        val policy = client.policies.get(created.id)
 
         assertEquals(created.id, policy.id)
         assertEquals(policyName, policy.name)
@@ -136,7 +136,7 @@ class PolicyTest : BaseIntegrationTest() {
     @DisplayName("Get non-existent policy returns 404")
     fun testGetNonExistentPolicy() {
         assertThrows<NotFoundException> {
-            client.admin.policies.get("non-existent-policy-id-12345")
+            client.policies.get("non-existent-policy-id-12345")
         }
 
         println("✓ Non-existent policy correctly returns 404")
@@ -150,7 +150,7 @@ class PolicyTest : BaseIntegrationTest() {
     fun testListPolicies() {
         // Create a few policies
         repeat(2) { i ->
-            val policy = client.admin.policies.createAllowPolicy(
+            val policy = client.policies.createAllowPolicy(
                 name = "list-policy-$i-${testId}",
                 description = "List test policy $i",
                 actions = listOf("secret:list"),
@@ -159,7 +159,7 @@ class PolicyTest : BaseIntegrationTest() {
             createdPolicyIds.add(policy.id)
         }
 
-        val page = client.admin.policies.list(
+        val page = client.policies.list(
             PolicyFilter(limit = 10)
         )
 
@@ -171,7 +171,7 @@ class PolicyTest : BaseIntegrationTest() {
     @Order(21)
     @DisplayName("List policies by effect")
     fun testListPoliciesByEffect() {
-        val page = client.admin.policies.list(
+        val page = client.policies.list(
             PolicyFilter(effect = PolicyEffect.ALLOW, limit = 10)
         )
 
@@ -189,7 +189,7 @@ class PolicyTest : BaseIntegrationTest() {
     @DisplayName("Update policy description")
     fun testUpdatePolicy() {
         val policyName = "update-policy-${testId}"
-        val created = client.admin.policies.createAllowPolicy(
+        val created = client.policies.createAllowPolicy(
             name = policyName,
             description = "Original description",
             actions = listOf("secret:list"),
@@ -197,7 +197,7 @@ class PolicyTest : BaseIntegrationTest() {
         )
         createdPolicyIds.add(created.id)
 
-        val updated = client.admin.policies.update(
+        val updated = client.policies.update(
             id = created.id,
             request = UpdatePolicyRequest(description = "Updated description")
         )
@@ -212,7 +212,7 @@ class PolicyTest : BaseIntegrationTest() {
     @DisplayName("Update policy actions")
     fun testUpdatePolicyActions() {
         val policyName = "actions-policy-${testId}"
-        val created = client.admin.policies.createAllowPolicy(
+        val created = client.policies.createAllowPolicy(
             name = policyName,
             description = "Actions test policy",
             actions = listOf("secret:list"),
@@ -220,7 +220,7 @@ class PolicyTest : BaseIntegrationTest() {
         )
         createdPolicyIds.add(created.id)
 
-        val updated = client.admin.policies.update(
+        val updated = client.policies.update(
             id = created.id,
             request = UpdatePolicyRequest(
                 actions = listOf("secret:list", "secret:read:metadata", "secret:read:value")
@@ -238,7 +238,7 @@ class PolicyTest : BaseIntegrationTest() {
     @DisplayName("Disable and enable policy")
     fun testDisableEnablePolicy() {
         val policyName = "enable-policy-${testId}"
-        val created = client.admin.policies.createAllowPolicy(
+        val created = client.policies.createAllowPolicy(
             name = policyName,
             description = "Enable test policy",
             actions = listOf("secret:list"),
@@ -249,12 +249,12 @@ class PolicyTest : BaseIntegrationTest() {
         assertTrue(created.enabled)
 
         // Disable
-        val disabled = client.admin.policies.disable(created.id)
+        val disabled = client.policies.disable(created.id)
         assertFalse(disabled.enabled)
         println("✓ Disabled policy")
 
         // Enable
-        val enabled = client.admin.policies.enable(created.id)
+        val enabled = client.policies.enable(created.id)
         assertTrue(enabled.enabled)
         println("✓ Re-enabled policy")
     }
@@ -266,7 +266,7 @@ class PolicyTest : BaseIntegrationTest() {
     @DisplayName("Delete a policy")
     fun testDeletePolicy() {
         val policyName = "delete-policy-${testId}"
-        val created = client.admin.policies.createAllowPolicy(
+        val created = client.policies.createAllowPolicy(
             name = policyName,
             description = "Delete test policy",
             actions = listOf("secret:list"),
@@ -275,12 +275,12 @@ class PolicyTest : BaseIntegrationTest() {
 
         // Delete it
         assertDoesNotThrow {
-            client.admin.policies.delete(created.id)
+            client.policies.delete(created.id)
         }
 
         // Verify it's gone
         assertThrows<NotFoundException> {
-            client.admin.policies.get(created.id)
+            client.policies.get(created.id)
         }
 
         println("✓ Deleted policy: $policyName")
