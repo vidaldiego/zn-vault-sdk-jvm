@@ -13,6 +13,11 @@ import java.time.temporal.ChronoUnit
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class AuditTest : BaseIntegrationTest() {
 
+    // /v1/audit/* is tenant-scoped (audit/stats now rejects superadmins).
+    // Use a tenant admin to call these endpoints.
+    override fun createClient(): com.zincapp.vault.ZnVaultClient =
+        TestConfig.createTenantAdminClient()
+
     // ==================== List Audit Logs Tests ====================
 
     @Test

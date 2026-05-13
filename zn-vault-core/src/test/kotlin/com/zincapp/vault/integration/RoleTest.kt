@@ -12,6 +12,10 @@ import org.junit.jupiter.api.Assertions.*
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class RoleTest : BaseIntegrationTest() {
 
+    // /v1/roles is tenant-scoped; superadmins are rejected. Use a tenant admin.
+    override fun createClient(): com.zincapp.vault.ZnVaultClient =
+        TestConfig.createTenantAdminClient()
+
     private val createdRoleIds = mutableListOf<String>()
 
     override fun cleanup() {

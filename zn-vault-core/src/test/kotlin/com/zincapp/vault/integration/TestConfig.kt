@@ -60,8 +60,10 @@ object TestConfig {
         val CERT_USER_USERNAME: String = System.getenv("ZNVAULT_CERT_USER_USERNAME") ?: "$DEFAULT_TENANT/sdk-cert-user"
         val CERT_USER_PASSWORD: String = System.getenv("ZNVAULT_CERT_USER_PASSWORD") ?: STANDARD_PASSWORD
 
-        // Second tenant admin (for isolation testing)
-        val TENANT2_ADMIN_USERNAME: String = System.getenv("ZNVAULT_TENANT2_ADMIN_USERNAME") ?: "$TENANT_2/sdk-admin"
+        // Second tenant admin (for isolation testing). Username is sdk-admin2
+        // because the server's superadmin user-create requires globally
+        // unique usernames; sdk-admin is taken by the first tenant.
+        val TENANT2_ADMIN_USERNAME: String = System.getenv("ZNVAULT_TENANT2_ADMIN_USERNAME") ?: "$TENANT_2/sdk-admin2"
         val TENANT2_ADMIN_PASSWORD: String = System.getenv("ZNVAULT_TENANT2_ADMIN_PASSWORD") ?: STANDARD_PASSWORD
     }
 

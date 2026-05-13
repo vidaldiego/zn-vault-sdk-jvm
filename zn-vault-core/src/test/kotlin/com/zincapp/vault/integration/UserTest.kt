@@ -12,6 +12,10 @@ import org.junit.jupiter.api.Assertions.*
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class UserTest : BaseIntegrationTest() {
 
+    // /v1/users is tenant-scoped; superadmins are rejected. Use a tenant admin.
+    override fun createClient(): com.zincapp.vault.ZnVaultClient =
+        TestConfig.createTenantAdminClient()
+
     private val createdUserIds = mutableListOf<String>()
 
     override fun cleanup() {
