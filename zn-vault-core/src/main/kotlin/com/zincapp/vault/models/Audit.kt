@@ -43,9 +43,30 @@ enum class AuditStatus {
 }
 
 /**
- * Filter for listing audit logs.
+ * Filter for listing audit logs (tenant-scoped).
+ *
+ * The tenant is derived from the authenticated principal. Use
+ * [SuperadminAuditFilter] (via the superadmin client) for cross-tenant queries.
  */
 data class AuditFilter(
+    @JsonProperty("start_date") val startDate: Instant? = null,
+    @JsonProperty("end_date") val endDate: Instant? = null,
+    val client: String? = null,
+    val action: String? = null,
+    @JsonProperty("resource_type") val resourceType: String? = null,
+    @JsonProperty("resource_id") val resourceId: String? = null,
+    val status: AuditStatus? = null,
+    val limit: Int = 50,
+    val offset: Int = 0
+)
+
+/**
+ * Filter for listing audit logs across tenants (superadmin only).
+ *
+ * Mirrors [AuditFilter] but adds [tenantId] to scope the query to a specific
+ * tenant. Required at the route level by /v1/superadmin/audit.
+ */
+data class SuperadminAuditFilter(
     @JsonProperty("start_date") val startDate: Instant? = null,
     @JsonProperty("end_date") val endDate: Instant? = null,
     val client: String? = null,

@@ -21,7 +21,7 @@ class ZnVaultSuperadminAsyncClient(private val sync: ZnVaultSuperadminClient) {
     val tenants = AsyncTenantClient(sync.tenants)
 
     /** Async audit operations across all tenants. */
-    val audit = AsyncAuditClient(sync.audit)
+    val audit = AsyncSuperadminAuditClient(sync.audit)
 
     /** Async health operations. */
     val health = AsyncHealthClient(sync.health)

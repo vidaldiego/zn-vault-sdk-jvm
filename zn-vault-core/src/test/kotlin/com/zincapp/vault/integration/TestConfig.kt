@@ -2,6 +2,7 @@
 package com.zincapp.vault.integration
 
 import com.zincapp.vault.ZnVaultClient
+import com.zincapp.vault.ZnVaultSuperadminClient
 
 /**
  * Test configuration for integration tests.
@@ -102,6 +103,22 @@ object TestConfig {
             client.login(Users.SUPERADMIN_USERNAME, Users.SUPERADMIN_PASSWORD)
             client
         }
+    }
+
+    /**
+     * Create a superadmin-scoped admin client (cross-tenant operations).
+     *
+     * Returns [ZnVaultSuperadminClient] for the cross-tenant surface
+     * (audit across tenants, tenant CRUD, etc.). For regular tenant operations,
+     * prefer [createSuperadminClient] which returns a [ZnVaultClient].
+     */
+    fun createSuperadminAdminClient(): ZnVaultSuperadminClient {
+        return ZnVaultSuperadminClient.builder()
+            .baseUrl(BASE_URL)
+            .insecureTls()
+            .debug(true)
+            .build()
+            .also { it.login(Users.SUPERADMIN_USERNAME, Users.SUPERADMIN_PASSWORD) }
     }
 
     /**

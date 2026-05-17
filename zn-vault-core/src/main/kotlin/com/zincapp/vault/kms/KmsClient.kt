@@ -54,7 +54,7 @@ class KmsClient internal constructor(
      * @return Key details
      */
     fun getKey(keyId: String): KmsKey {
-        val response = httpClient.get("/v1/kms/keys/$keyId", KeyMetadataResponse::class.java)
+        val response = httpClient.get("/v1/kms/keys/${encode(keyId)}", KeyMetadataResponse::class.java)
         return response.keyMetadata
     }
 
@@ -78,7 +78,7 @@ class KmsClient internal constructor(
      */
     fun updateDescription(keyId: String, description: String): KmsKey {
         httpClient.put(
-            "/v1/kms/keys/$keyId/description",
+            "/v1/kms/keys/${encode(keyId)}/description",
             mapOf("description" to description),
             SuccessResponse::class.java
         )
@@ -94,7 +94,7 @@ class KmsClient internal constructor(
      */
     fun updateAlias(keyId: String, alias: String): KmsKey {
         httpClient.put(
-            "/v1/kms/keys/$keyId/alias",
+            "/v1/kms/keys/${encode(keyId)}/alias",
             mapOf("alias" to alias),
             SuccessResponse::class.java
         )
@@ -108,7 +108,7 @@ class KmsClient internal constructor(
      * @return Updated key
      */
     fun enableKey(keyId: String): KmsKey {
-        httpClient.postEmpty("/v1/kms/keys/$keyId/enable", SuccessResponse::class.java)
+        httpClient.postEmpty("/v1/kms/keys/${encode(keyId)}/enable", SuccessResponse::class.java)
         return getKey(keyId)
     }
 
@@ -119,7 +119,7 @@ class KmsClient internal constructor(
      * @return Updated key
      */
     fun disableKey(keyId: String): KmsKey {
-        httpClient.postEmpty("/v1/kms/keys/$keyId/disable", SuccessResponse::class.java)
+        httpClient.postEmpty("/v1/kms/keys/${encode(keyId)}/disable", SuccessResponse::class.java)
         return getKey(keyId)
     }
 
@@ -132,7 +132,7 @@ class KmsClient internal constructor(
      */
     fun scheduleKeyDeletion(keyId: String, pendingWindowDays: Int = 7): KmsKey {
         httpClient.post(
-            "/v1/kms/keys/$keyId/schedule-deletion",
+            "/v1/kms/keys/${encode(keyId)}/schedule-deletion",
             mapOf("pendingWindowDays" to pendingWindowDays),
             SuccessResponse::class.java
         )
@@ -146,7 +146,7 @@ class KmsClient internal constructor(
      * @return Updated key
      */
     fun cancelKeyDeletion(keyId: String): KmsKey {
-        httpClient.postEmpty("/v1/kms/keys/$keyId/cancel-deletion", SuccessResponse::class.java)
+        httpClient.postEmpty("/v1/kms/keys/${encode(keyId)}/cancel-deletion", SuccessResponse::class.java)
         return getKey(keyId)
     }
 
@@ -307,7 +307,7 @@ class KmsClient internal constructor(
      * @return Updated key with new version
      */
     fun rotateKey(keyId: String): KmsKey {
-        httpClient.postEmpty("/v1/kms/keys/$keyId/rotate", SuccessResponse::class.java)
+        httpClient.postEmpty("/v1/kms/keys/${encode(keyId)}/rotate", SuccessResponse::class.java)
         return getKey(keyId)
     }
 
@@ -318,7 +318,7 @@ class KmsClient internal constructor(
      * @return Rotation status
      */
     fun getRotationStatus(keyId: String): RotationStatus {
-        return httpClient.get("/v1/kms/keys/$keyId/rotation-status", RotationStatus::class.java)
+        return httpClient.get("/v1/kms/keys/${encode(keyId)}/rotation-status", RotationStatus::class.java)
     }
 
     /**
@@ -335,7 +335,7 @@ class KmsClient internal constructor(
         intervalDays: Int = 365
     ): RotationStatus {
         val request = RotationConfigRequest(enabled, intervalDays)
-        return httpClient.put("/v1/kms/keys/$keyId/rotation-status", request, RotationStatus::class.java)
+        return httpClient.put("/v1/kms/keys/${encode(keyId)}/rotation-status", request, RotationStatus::class.java)
     }
 
     // ==================== Key Policies & Grants ====================
@@ -347,7 +347,7 @@ class KmsClient internal constructor(
      * @return Key policy
      */
     fun getKeyPolicy(keyId: String): KeyPolicy {
-        return httpClient.get("/v1/kms/keys/$keyId/policy", KeyPolicy::class.java)
+        return httpClient.get("/v1/kms/keys/${encode(keyId)}/policy", KeyPolicy::class.java)
     }
 
     /**
@@ -359,7 +359,7 @@ class KmsClient internal constructor(
      */
     fun setKeyPolicy(keyId: String, policy: String): KeyPolicy {
         return httpClient.put(
-            "/v1/kms/keys/$keyId/policy",
+            "/v1/kms/keys/${encode(keyId)}/policy",
             mapOf("policy" to policy),
             KeyPolicy::class.java
         )

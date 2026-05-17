@@ -157,7 +157,6 @@ class AuditClient internal constructor(
         }
         filter.client?.let { params.add("client=${encode(it)}") }
         filter.action?.let { params.add("action=${encode(it)}") }
-        filter.tenantId?.let { params.add("tenant_id=${encode(it)}") }
         filter.resourceType?.let { params.add("resource_type=${encode(it)}") }
         filter.resourceId?.let { params.add("resource_id=${encode(it)}") }
         filter.status?.let { params.add("status=${it.name.lowercase()}") }

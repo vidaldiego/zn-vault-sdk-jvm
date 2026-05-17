@@ -81,10 +81,14 @@ class AuditTest : BaseIntegrationTest() {
 
     @Test
     @Order(12)
-    @DisplayName("Filter audit logs by tenant")
+    @DisplayName("Filter audit logs by tenant (superadmin client)")
     fun testFilterByTenant() {
-        val page = client.audit.list(
-            AuditFilter(
+        // Cross-tenant audit queries moved to the superadmin client surface
+        // (AuditFilter no longer has tenantId after v4.0.0 — use
+        // SuperadminAuditFilter via ZnVaultSuperadminClient).
+        val admin = TestConfig.createSuperadminAdminClient()
+        val page = admin.audit.list(
+            SuperadminAuditFilter(
                 tenantId = TestConfig.DEFAULT_TENANT,
                 limit = 10
             )

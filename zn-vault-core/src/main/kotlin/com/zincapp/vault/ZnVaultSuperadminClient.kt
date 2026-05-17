@@ -2,7 +2,7 @@
 package com.zincapp.vault
 
 import com.zincapp.vault.admin.TenantClient
-import com.zincapp.vault.audit.AuditClient
+import com.zincapp.vault.audit.SuperadminAuditClient
 import com.zincapp.vault.auth.SuperadminAuthClient
 import com.zincapp.vault.auth.TokenManager
 import com.zincapp.vault.auth.TokenManagerConfig
@@ -56,8 +56,12 @@ class ZnVaultSuperadminClient private constructor(
      */
     val auth: SuperadminAuthClient = SuperadminAuthClient(httpClient)
 
-    /** Audit log across all tenants. */
-    val audit: AuditClient = AuditClient(httpClient)
+    /**
+     * Cross-tenant audit log queries via `/v1/superadmin/audit*`. Use
+     * [SuperadminAuditFilter.tenantId][com.zincapp.vault.models.SuperadminAuditFilter.tenantId]
+     * to scope a query to a specific tenant.
+     */
+    val audit: SuperadminAuditClient = SuperadminAuditClient(httpClient)
 
     /** Health check operations. */
     val health: HealthClient = HealthClient(httpClient)

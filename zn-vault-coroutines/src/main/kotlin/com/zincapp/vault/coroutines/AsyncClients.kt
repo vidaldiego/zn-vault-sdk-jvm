@@ -477,6 +477,32 @@ class AsyncAuditClient(private val sync: AuditClient) {
 }
 
 /**
+ * Async wrapper for cross-tenant audit operations.
+ */
+class AsyncSuperadminAuditClient(private val sync: com.zincapp.vault.audit.SuperadminAuditClient) {
+
+    suspend fun list(filter: SuperadminAuditFilter = SuperadminAuditFilter()): AuditPage =
+        withContext(Dispatchers.IO) { sync.list(filter) }
+
+    fun listAsFlow(filter: SuperadminAuditFilter = SuperadminAuditFilter()): Flow<AuditEntry> = flow {
+        var currentFilter = filter
+        do {
+            val response = withContext(Dispatchers.IO) { sync.list(currentFilter) }
+            response.items.forEach { emit(it) }
+            currentFilter = currentFilter.copy(offset = currentFilter.offset + response.items.size)
+        } while (response.hasMore)
+    }
+
+    suspend fun getStats(period: StatsPeriod = StatsPeriod.DAY, tenantId: String? = null): AuditStats =
+        withContext(Dispatchers.IO) { sync.getStats(period, tenantId) }
+
+    suspend fun export(
+        filter: SuperadminAuditFilter = SuperadminAuditFilter(),
+        format: ExportFormat = ExportFormat.JSON
+    ): String = withContext(Dispatchers.IO) { sync.export(filter, format) }
+}
+
+/**
  * Async wrapper for HealthClient.
  */
 class AsyncHealthClient(private val sync: HealthClient) {
