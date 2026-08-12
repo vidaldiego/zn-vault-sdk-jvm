@@ -8,6 +8,7 @@ import com.zincapp.vault.audit.AuditClient
 import com.zincapp.vault.auth.AuthClient
 import com.zincapp.vault.auth.TokenManager
 import com.zincapp.vault.auth.TokenManagerConfig
+import com.zincapp.vault.certificates.CertificateClient
 import com.zincapp.vault.health.HealthClient
 import com.zincapp.vault.http.RetryPolicy
 import com.zincapp.vault.http.TlsConfig
@@ -67,6 +68,16 @@ class ZnVaultClient private constructor(
 
     /** Key Management Service operations */
     val kms: KmsClient = KmsClient(httpClient)
+
+    /**
+     * Certificate store operations (store, list, decrypt).
+     *
+     * [CertificateClient] has always been public, but its constructor is `internal`, so before
+     * this accessor existed the class was unreachable from outside the SDK — a caller had to build
+     * a second [ZnVaultHttpClient] of its own and risk drifting from this client's base URL, TLS
+     * and credentials.
+     */
+    val certificates: CertificateClient = CertificateClient(httpClient)
 
     /** Tenant-scoped user management (your tenant only). */
     val users: UserClient = UserClient(httpClient)
