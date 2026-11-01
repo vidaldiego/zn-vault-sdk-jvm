@@ -2,6 +2,7 @@
 package com.zincapp.vault.integration
 
 import com.zincapp.vault.models.*
+import com.zincapp.vault.exception.AuthorizationException
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import java.time.Instant
@@ -152,9 +153,11 @@ class AuditTest : BaseIntegrationTest() {
     @Order(30)
     @DisplayName("Verify audit chain integrity")
     fun testVerifyChain() {
-        val result = client.audit.verify()
+        val result = TestConfig.createSuperadminClient().audit.verify()
 
         assertNotNull(result)
+        assertEquals("retained", result.scope)
+        assertEquals("not_proven", result.historicalCompleteness)
         println("✓ Audit chain verification: ${if (result.valid) "VALID" else "INVALID"}")
         println("  Entries verified: ${result.entriesVerified}")
         result.brokenAt?.let { println("  Broken at: $it") }
@@ -164,10 +167,17 @@ class AuditTest : BaseIntegrationTest() {
     @Order(31)
     @DisplayName("Check if chain is valid")
     fun testIsChainValid() {
-        val valid = client.audit.isChainValid()
+        val valid = TestConfig.createSuperadminClient().audit.isChainValid()
 
         assertTrue(valid)
         println("✓ Audit chain is valid")
+    }
+
+    @Test
+    @Order(32)
+    fun tenantCannotVerifyGlobalChain() {
+        val error = assertThrows(AuthorizationException::class.java) { client.audit.verify() }
+        assertEquals(403, error.statusCode)
     }
 
     // ==================== Audit Statistics Tests ====================
