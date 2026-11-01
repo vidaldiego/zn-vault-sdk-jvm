@@ -125,14 +125,39 @@ enum class StatsPeriod {
  * Audit chain verification result.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+data class AuditVerificationInterval(val firstId: Long? = null, val lastId: Long? = null)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class AuditVerifyResult(
-    val valid: Boolean,
-    @JsonProperty("entries_verified") val entriesVerified: Long,
-    @JsonProperty("first_entry_id") val firstEntryId: Long? = null,
-    @JsonProperty("last_entry_id") val lastEntryId: Long? = null,
-    @JsonProperty("broken_at") val brokenAt: Long? = null,
+    var valid: Boolean = false,
+    val status: String? = null,
+    val reason: String? = null,
+    val reasons: List<String> = emptyList(),
+    val errors: List<String> = emptyList(),
+    val checkedEntries: Long = 0,
+    val readEntries: Long = 0,
+    val authenticatedEntries: Long = 0,
+    val unverifiedEntries: Long = 0,
+    val unsignedDetailsEntries: Long? = null,
+    val scope: String? = null,
+    val interval: AuditVerificationInterval? = null,
+    val completed: Boolean = false,
+    val startedAt: String? = null,
+    val finishedAt: String? = null,
+    val lastVerified: String? = null,
+    val consistency: String? = null,
+    val historicalCompleteness: String? = null,
+    val brokenAt: Long? = null,
     val message: String? = null
-)
+) {
+    val entriesVerified: Long get() = authenticatedEntries
+    val firstEntryId: Long? get() = interval?.firstId
+    val lastEntryId: Long? get() = interval?.lastId
+    init {
+        valid = valid && status == "verified" && scope == "retained" && completed && readEntries > 0
+            && authenticatedEntries == readEntries && unverifiedEntries == 0L && unsignedDetailsEntries == 0L
+    }
+}
 
 /**
  * Audit export format.

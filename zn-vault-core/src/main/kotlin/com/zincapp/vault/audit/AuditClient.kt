@@ -134,7 +134,7 @@ class AuditClient internal constructor(
      * @return Verification result
      */
     fun verify(): AuditVerifyResult {
-        return httpClient.get("/v1/audit/verify", AuditVerifyResult::class.java)
+        return httpClient.get("/v1/superadmin/audit/verify", AuditVerifyResult::class.java)
     }
 
     /**
